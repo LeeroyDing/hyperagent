@@ -19,7 +19,7 @@ import (
 "github.com/LeeroyDing/hyperagent/internal/web"
 )
 
-var version = "v0.0.10"
+var version = "v0.0.11"
 
 func main() {
 configPath := flag.String("config", "", "Path to config file")
@@ -27,7 +27,13 @@ interactive := flag.Bool("interactive", false, "Enable interactive mode")
 debug := flag.Bool("debug", false, "Enable debug logging")
 webMode := flag.Bool("web", false, "Start web server")
 port := flag.Int("port", 3001, "Web server port")
+showVersion := flag.Bool("version", false, "Show version")
 flag.Parse()
+
+if *showVersion {
+fmt.Printf("Hyperagent %s\n", version)
+return
+}
 
 level := slog.LevelInfo
 if *debug {
