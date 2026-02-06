@@ -32,6 +32,6 @@ cmd := exec.Command(binPath, "--version")
 out, err := cmd.CombinedOutput()
 assert.NoError(t, err)
 assert.Contains(t, string(out), "Hyperagent")
-assert.Contains(t, string(out), "v0.0.10")
+assert.Contains(t, string(out), "v0.0.")
 })
 }

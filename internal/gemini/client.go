@@ -154,7 +154,7 @@ return textResponse, toolCalls, nil
 }
 
 func (c *Client) EmbedContent(ctx context.Context, text string) ([]float32, error) {
-em := c.client.EmbeddingModel("text-embedding-004")
+em := c.client.EmbeddingModel("gemini-embedding-001")
 var lastErr error
 for i := 0; i < 3; i++ {
 resp, err := em.EmbedContent(ctx, genai.Text(text))
