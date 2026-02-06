@@ -29,7 +29,7 @@ useTUI      bool
 modelName   string
 webPort     int
 debug       bool
-version     = "0.0.6"
+version     = "0.0.7"
 )
 
 func initStorage() {
