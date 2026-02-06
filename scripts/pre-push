@@ -1,21 +1,39 @@
 #!/bin/sh
 
-# Ensure Go is in the PATH (especially for Linuxbrew users)
+# Ensure Go and GoReleaser are in the PATH
 export PATH="$PATH:/home/linuxbrew/.linuxbrew/bin:/usr/local/go/bin"
 
-# Check if go is available
-if ! command -v go >/dev/null 2>&1; then
-  echo "Error: 'go' command not found. Cannot run tests."
+# 1. Always run tests first
+echo "Running tests before push..."
+go test ./...
+if [ $? -ne 0 ]; then
+  echo "Tests failed! Push aborted."
   exit 1
 fi
 
-echo "Running tests before push..."
-go test ./...
+# 2. Check if we are pushing a tag
+# Git passes pushed refs to stdin: <local ref> <local sha1> <remote ref> <remote sha1>
+while read local_ref local_sha remote_ref remote_sha
+do
+  if echo "$remote_ref" | grep -q "^refs/tags/"; then
+    TAG_NAME=$(echo "$remote_ref" | sed 's|refs/tags/||')
+    echo "Tag push detected ($TAG_NAME). Running release dry run..."
+    
+    if ! command -v goreleaser >/dev/null 2>&1; then
+      echo "Error: 'goreleaser' command not found. Cannot validate release."
+      exit 1
+    fi
 
-if [ $? -ne 0 ]; then
- echo "Tests failed! Push aborted."
- exit 1
-fi
+    # Run GoReleaser dry run (snapshot)
+    goreleaser release --snapshot --clean
+    
+    if [ $? -ne 0 ]; then
+      echo "Release dry run failed for tag $TAG_NAME! Push aborted."
+      exit 1
+    fi
+    echo "Release dry run passed."
+  fi
+done
 
-echo "Tests passed. Proceeding with push."
+echo "All checks passed. Proceeding with push."
 exit 0
