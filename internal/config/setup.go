@@ -65,7 +65,7 @@ return nil, fmt.Errorf("failed to save config: %w", err)
 
 fmt.Println("")
 fmt.Printf("✅ Configuration saved to %s\n", path)
-fmt.Println("You're all set! Starting Hyperagent...\n")
+fmt.Println("You're all set! Starting Hyperagent...")
 
 return cfg, nil
 }

@@ -76,7 +76,7 @@ c.JSON(http.StatusCreated, gin.H{"id": id})
 }
 
 func (s *Server) getMessages(c *gin.Context) {
-id := c.Param("id")
+id := c.Param("/id")
 messages, err := s.History.LoadHistory(id)
 if err != nil {
 c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -88,7 +88,7 @@ c.JSON(http.StatusOK, messages)
 func (s *Server) sendMessage(c *gin.Context) {
 id := c.Param("id")
 var req struct {
-Content string `json:"content"`
+Content string `json:"content"` 
 }
 if err := c.ShouldBindJSON(&req); err != nil {
 c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -125,9 +125,9 @@ c.JSON(http.StatusOK, gin.H{"role": "assistant", "content": response})
 
 func (s *Server) autoNameSession(id, firstMessage string) {
 prompt := fmt.Sprintf("Generate a short, concise title (max 5 words) for a conversation starting with: '%s'. Return ONLY the title.", firstMessage)
-name, err := s.Agent.Gemini.GenerateContent(context.Background(), []gemini.Message{
+name, _, err := s.Agent.Gemini.GenerateContent(context.Background(), []gemini.Message{
 {Role: "user", Content: prompt},
-})
+}, nil)
 if err == nil {
 s.History.SetSessionName(id, strings.TrimSpace(name))
 }

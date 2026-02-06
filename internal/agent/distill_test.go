@@ -7,14 +7,21 @@ import (
 "github.com/LeeroyDing/hyperagent/internal/gemini"
 "github.com/LeeroyDing/hyperagent/internal/history"
 "github.com/LeeroyDing/hyperagent/internal/memory"
+"github.com/google/generative-ai-go/genai"
 )
 
 type mockGemini struct{}
-func (m *mockGemini) GenerateContent(ctx context.Context, messages []gemini.Message) (string, error) {
-return "This is a distilled summary.", nil
+
+func (m *mockGemini) GenerateContent(ctx context.Context, messages []gemini.Message, tools []*genai.Tool) (string, []gemini.ToolCall, error) {
+return "This is a distilled summary.", nil, nil
+}
+
+func (m *mockGemini) SendToolResponse(ctx context.Context, messages []gemini.Message, tools []*genai.Tool, toolResponses []gemini.ToolResponse) (string, []gemini.ToolCall, error) {
+return "", nil, nil
 }
 
 type mockEmbedder struct{}
+
 func (m *mockEmbedder) EmbedContent(ctx context.Context, text string) ([]float32, error) {
 return []float32{0.1, 0.2, 0.3}, nil
 }

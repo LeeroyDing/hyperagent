@@ -15,6 +15,16 @@ Role    string
 Content string
 }
 
+type ToolCall struct {
+Name      string
+Arguments map[string]interface{}
+}
+
+type ToolResponse struct {
+Name    string
+Content string
+}
+
 type Client struct {
 client *genai.Client
 model  *genai.GenerativeModel
@@ -33,7 +43,8 @@ model:  model,
 }, nil
 }
 
-func (c *Client) GenerateContent(ctx context.Context, messages []Message) (string, error) {
+func (c *Client) GenerateContent(ctx context.Context, messages []Message, tools []*genai.Tool) (string, []ToolCall, error) {
+c.model.Tools = tools
 cs := c.model.StartChat()
 
 // Map roles and set history except the last message
@@ -58,19 +69,75 @@ for i := 0; i < 3; i++ {
 resp, err := cs.SendMessage(ctx, genai.Text(lastMsg.Content))
 if err == nil {
 if len(resp.Candidates) == 0 || len(resp.Candidates[0].Content.Parts) == 0 {
-return "", fmt.Errorf("no candidates or parts in response")
+return "", nil, fmt.Errorf("no candidates or parts in response")
 }
-part := resp.Candidates[0].Content.Parts[0]
-if text, ok := part.(genai.Text); ok {
-return string(text), nil
+
+var toolCalls []ToolCall
+var textResponse string
+
+for _, part := range resp.Candidates[0].Content.Parts {
+switch p := part.(type) {
+case genai.Text:
+textResponse += string(p)
+case genai.FunctionCall:
+toolCalls = append(toolCalls, ToolCall{
+Name:      p.Name,
+Arguments: p.Args,
+})
 }
-return "", fmt.Errorf("unexpected part type: %T", part)
+}
+return textResponse, toolCalls, nil
 }
 lastErr = err
 slog.Warn("Gemini API call failed, retrying...", "attempt", i+1, "error", err)
 time.Sleep(time.Duration(1<<i) * time.Second)
 }
-return "", fmt.Errorf("failed after 3 attempts: %w", lastErr)
+return "", nil, fmt.Errorf("failed after 3 attempts: %w", lastErr)
+}
+
+func (c *Client) SendToolResponse(ctx context.Context, messages []Message, tools []*genai.Tool, toolResponses []ToolResponse) (string, []ToolCall, error) {
+c.model.Tools = tools
+cs := c.model.StartChat()
+
+// Reconstruct history
+for _, m := range messages {
+role := "user"
+if m.Role == "assistant" || m.Role == "model" {
+role = "model"
+}
+cs.History = append(cs.History, &genai.Content{
+Parts: []genai.Part{genai.Text(m.Content)},
+Role:  role,
+})
+}
+
+var parts []genai.Part
+for _, tr := range toolResponses {
+parts = append(parts, genai.FunctionResponse{
+Name:     tr.Name,
+Response: map[string]interface{}{"result": tr.Content},
+})
+}
+
+resp, err := cs.SendMessage(ctx, parts...)
+if err != nil {
+return "", nil, err
+}
+
+var toolCalls []ToolCall
+var textResponse string
+for _, part := range resp.Candidates[0].Content.Parts {
+switch p := part.(type) {
+case genai.Text:
+textResponse += string(p)
+case genai.FunctionCall:
+toolCalls = append(toolCalls, ToolCall{
+Name:      p.Name,
+Arguments: p.Args,
+})
+}
+}
+return textResponse, toolCalls, nil
 }
 
 func (c *Client) EmbedContent(ctx context.Context, text string) ([]float32, error) {

@@ -28,9 +28,9 @@ historyText += fmt.Sprintf("%s: %s\n", m.Role, m.Content)
 
 prompt := fmt.Sprintf("Summarize the following conversation into a concise set of key facts, decisions, and context for long-term memory. Focus on information that will be useful for future interactions. Conversation:\n%s", historyText)
 
-summary, err := a.Gemini.GenerateContent(ctx, []gemini.Message{
+summary, _, err := a.Gemini.GenerateContent(ctx, []gemini.Message{
 {Role: "user", Content: prompt},
-})
+}, nil)
 if err != nil {
 return fmt.Errorf("failed to generate distillation summary: %w", err)
 }
