@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hyperagent Web</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #1a1a1a; color: #e5e5e5; }
+        .sidebar { width: 260px; background-color: #202123; }
+        .chat-area { flex: 1; background-color: #343541; }
+        .message-user { background-color: #343541; }
+        .message-assistant { background-color: #444654; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        function App() {
+            const [sessions, setSessions] = useState([]);
+            const [currentSession, setCurrentSession] = useState(null);
+            const [messages, setMessages] = useState([]);
+            const [input, setInput] = useState('');
+            const [loading, setLoading] = useState(false);
+
+            useEffect(() => {
+                fetchSessions();
+            }, []);
+
+            useEffect(() => {
+                if (currentSession) {
+                    fetchMessages(currentSession);
+                }
+            }, [currentSession]);
+
+            const fetchSessions = async () => {
+                try {
+                    const res = await fetch('/api/sessions');
+                    const data = await res.json();
+                    setSessions(Array.isArray(data) ? data : []);
+                } catch (e) { console.error(e); }
+            };
+
+            const fetchMessages = async (id) => {
+                try {
+                    const res = await fetch(`/api/sessions/${id}/messages`);
+                    const data = await res.json();
+                    setMessages(Array.isArray(data) ? data : []);
+                } catch (e) { console.error(e); }
+            };
+
+            const createSession = async () => {
+                try {
+                    const res = await fetch('/api/sessions', { method: 'POST' });
+                    const data = await res.json();
+                    setCurrentSession(data.id);
+                    fetchSessions();
+                } catch (e) { console.error(e); }
+            };
+
+            const sendMessage = async () => {
+                if (!input.trim() || !currentSession) return;
+                const userMsg = { role: 'user', content: input };
+                setMessages([...messages, userMsg]);
+                const text = input;
+                setInput('');
+                setLoading(true);
+
+                try {
+                    const res = await fetch(`/api/sessions/${currentSession}/messages`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ content: text })
+                    });
+                    const data = await res.json();
+                    setMessages(prev => [...prev, data]);
+                } catch (e) {
+                    console.error(e);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            return (
+                <div className="flex h-screen">
+                    {/* Sidebar */}
+                    <div className="sidebar flex flex-col p-2">
+                        <button 
+                            onClick={createSession}
+                            className="border border-white/20 rounded p-3 mb-4 hover:bg-white/10 transition-colors text-left"
+                        >
+                            + New Chat
+                        </button>
+                        <div className="flex-1 overflow-y-auto">
+                            {sessions.map(s => (
+                                <div 
+                                    key={s.id} 
+                                    onClick={() => setCurrentSession(s.id)}
+                                    className={`p-3 rounded cursor-pointer hover:bg-white/5 truncate ${currentSession === s.id ? 'bg-white/10' : ''}`}
+                                >
+                                    {s.id}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Chat Area */}
+                    <div className="chat-area flex flex-col">
+                        <div className="flex-1 overflow-y-auto">
+                            {messages.map((m, i) => (
+                                <div key={i} className={`p-6 ${m.role === 'assistant' ? 'message-assistant' : 'message-user'}`}>
+                                    <div className="max-w-3xl mx-auto flex gap-4">
+                                        <div className="font-bold w-20">{m.role === 'assistant' ? '🤖' : '👤'}</div>
+                                        <div className="whitespace-pre-wrap">{m.content}</div>
+                                    </div>
+                                </div>
+                            ))}
+                            {loading && (
+                                <div className="p-6 message-assistant">
+                                    <div className="max-w-3xl mx-auto flex gap-4">
+                                        <div className="font-bold w-20">🤖</div>
+                                        <div className="animate-pulse">Thinking...</div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Input Area */}
+                        <div className="p-6 border-t border-white/10">
+                            <div className="max-w-3xl mx-auto relative">
+                                <textarea 
+                                    value={input}
+                                    onChange={(e) => setInput(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), sendMessage())}
+                                    placeholder="Type a message..."
+                                    className="w-full bg-transparent border border-white/20 rounded-lg p-4 pr-12 focus:outline-none focus:ring-1 focus:ring-white/40 resize-none"
+                                    rows="1"
+                                />
+                                <button 
+                                    onClick={sendMessage}
+                                    className="absolute right-3 bottom-3 p-1 rounded hover:bg-white/10"
+                                >
+                                    <svg viewBox="0 0 24 24" className="w-6 h-6 fill-current"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
