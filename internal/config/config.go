@@ -11,7 +11,7 @@ Model            string             `yaml:"model"`
 MCPServers       []mcp.ServerConfig `yaml:"mcp_servers"` 
 InteractiveMode  bool               `yaml:"interactive_mode"` 
 CommandAllowlist []string           `yaml:"command_allowlist"` 
-tGeminiAPIKey      string             `yaml:"gemini_api_key"`
+GeminiAPIKey      string             `yaml:"gemini_api_key"`
 }
 
 func LoadConfig(path string) (*Config, error) {
