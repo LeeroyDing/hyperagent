@@ -6,9 +6,11 @@ import (
 "fmt"
 "io/fs"
 "net/http"
+"os"
 "strings"
 
 "github.com/LeeroyDing/hyperagent/internal/agent"
+"github.com/LeeroyDing/hyperagent/internal/config"
 "github.com/LeeroyDing/hyperagent/internal/gemini"
 "github.com/LeeroyDing/hyperagent/internal/history"
 "github.com/gin-contrib/cors"
@@ -47,6 +49,8 @@ api.GET("/sessions", s.listSessions)
 api.POST("/sessions", s.createSession)
 api.GET("/sessions/:id/messages", s.getMessages)
 api.POST("/sessions/:id/messages", s.sendMessage)
+api.GET("/config", s.getConfig)
+api.POST("/config", s.updateConfig)
 }
 
 // Static files
@@ -115,6 +119,12 @@ if s.History.GetSessionName(id) == "New Conversation" {
 go s.autoNameSession(id, req.Content)
 }
 
+// Trigger memory distillation periodically (e.g., every 10 messages)
+messages, _ := s.History.LoadHistory(id)
+if len(messages)%10 == 0 {
+go s.Agent.Distill(context.Background(), id)
+}
+
 c.JSON(http.StatusOK, gin.H{"role": "assistant", "content": response})
 }
 
@@ -126,6 +136,32 @@ name, err := s.Agent.Gemini.GenerateContent(context.Background(), []gemini.Messa
 if err == nil {
 s.History.SetSessionName(id, strings.TrimSpace(name))
 }
+}
+
+func (s *Server) getConfig(c *gin.Context) {
+path := config.GetDefaultConfigPath()
+data, err := os.ReadFile(path)
+if err != nil {
+c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+return
+}
+c.Data(http.StatusOK, "text/yaml", data)
+}
+
+func (s *Server) updateConfig(c *gin.Context) {
+data, err := c.GetRawData()
+if err != nil {
+c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+return
+}
+
+path := config.GetDefaultConfigPath()
+if err := os.WriteFile(path, data, 0644); err != nil {
+c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+return
+}
+
+c.JSON(http.StatusOK, gin.H{"status": "success"})
 }
 
 func (s *Server) Run(addr string) error {

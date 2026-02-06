@@ -14,6 +14,7 @@
         .chat-area { flex: 1; background-color: #343541; }
         .message-user { background-color: #343541; }
         .message-assistant { background-color: #444654; }
+        .config-editor { background-color: #2d2d2d; color: #d4d4d4; font-family: monospace; }
     </style>
 </head>
 <body>
@@ -27,6 +28,9 @@
             const [messages, setMessages] = useState([]);
             const [input, setInput] = useState('');
             const [loading, setLoading] = useState(false);
+            const [view, setView] = useState('chat'); // 'chat' or 'settings'
+            const [config, setConfig] = useState('');
+            const [saveStatus, setSaveStatus] = useState('');
 
             useEffect(() => {
                 fetchSessions();
@@ -35,6 +39,7 @@
             useEffect(() => {
                 if (currentSession) {
                     fetchMessages(currentSession);
+                    setView('chat');
                 }
             }, [currentSession]);
 
@@ -52,6 +57,34 @@
                     const data = await res.json();
                     setMessages(Array.isArray(data) ? data : []);
                 } catch (e) { console.error(e); }
+            };
+
+            const fetchConfig = async () => {
+                try {
+                    const res = await fetch('/api/config');
+                    const data = await res.text();
+                    setConfig(data);
+                    setView('settings');
+                } catch (e) { console.error(e); }
+            };
+
+            const saveConfig = async () => {
+                setSaveStatus('Saving...');
+                try {
+                    const res = await fetch('/api/config', {
+                        method: 'POST',
+                        body: config
+                    });
+                    if (res.ok) {
+                        setSaveStatus('Saved successfully!');
+                        setTimeout(() => setSaveStatus(''), 3000);
+                    } else {
+                        setSaveStatus('Error saving config');
+                    }
+                } catch (e) {
+                    setSaveStatus('Error saving config');
+                    console.error(e);
+                }
             };
 
             const createSession = async () => {
@@ -90,65 +123,98 @@
                 <div className="flex h-screen">
                     {/* Sidebar */}
                     <div className="sidebar flex flex-col p-2">
-                        <button 
+                        <button
                             onClick={createSession}
-                            className="border border-white/20 rounded p-3 mb-4 hover:bg-white/10 transition-colors text-left"
+                            className="border border-white/20 rounded p-3 mb-2 hover:bg-white/10 transition-colors text-left"
                         >
                             + New Chat
                         </button>
                         <div className="flex-1 overflow-y-auto">
                             {sessions.map(s => (
-                                <div 
-                                    key={s.id} 
+                                <div
+                                    key={s.id}
                                     onClick={() => setCurrentSession(s.id)}
-                                    className={`p-3 rounded cursor-pointer hover:bg-white/5 truncate ${currentSession === s.id ? 'bg-white/10' : ''}`}
+                                    className={`p-3 rounded cursor-pointer hover:bg-white/5 truncate ${currentSession === s.id && view === 'chat' ? 'bg-white/10' : ''}`}
                                 >
-                                    {s.id}
+                                    {s.name || s.id}
                                 </div>
                             ))}
                         </div>
+                        <button
+                            onClick={fetchConfig}
+                            className={`p-3 rounded hover:bg-white/10 transition-colors text-left mt-2 ${view === 'settings' ? 'bg-white/10' : ''}`}
+                        >
+                            ⚙️ Settings
+                        </button>
                     </div>
 
-                    {/* Chat Area */}
+                    {/* Main Area */}
                     <div className="chat-area flex flex-col">
-                        <div className="flex-1 overflow-y-auto">
-                            {messages.map((m, i) => (
-                                <div key={i} className={`p-6 ${m.role === 'assistant' ? 'message-assistant' : 'message-user'}`}>
-                                    <div className="max-w-3xl mx-auto flex gap-4">
-                                        <div className="font-bold w-20">{m.role === 'assistant' ? '🤖' : '👤'}</div>
-                                        <div className="whitespace-pre-wrap">{m.content}</div>
-                                    </div>
+                        {view === 'chat' ? (
+                            <>
+                                <div className="flex-1 overflow-y-auto">
+                                    {messages.map((m, i) => (
+                                        <div key={i} className={`p-6 ${m.role === 'assistant' ? 'message-assistant' : 'message-user'}`}>
+                                            <div className="max-w-3xl mx-auto flex gap-4">
+                                                <div className="font-bold w-20">{m.role === 'assistant' ? '🤖' : '👤'}</div>
+                                                <div className="whitespace-pre-wrap">{m.content}</div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {loading && (
+                                        <div className="p-6 message-assistant">
+                                            <div className="max-w-3xl mx-auto flex gap-4">
+                                                <div className="font-bold w-20">🤖</div>
+                                                <div className="animate-pulse">Thinking...</div>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
-                            ))}
-                            {loading && (
-                                <div className="p-6 message-assistant">
-                                    <div className="max-w-3xl mx-auto flex gap-4">
-                                        <div className="font-bold w-20">🤖</div>
-                                        <div className="animate-pulse">Thinking...</div>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
 
-                        {/* Input Area */}
-                        <div className="p-6 border-t border-white/10">
-                            <div className="max-w-3xl mx-auto relative">
-                                <textarea 
-                                    value={input}
-                                    onChange={(e) => setInput(e.target.value)}
-                                    onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), sendMessage())}
-                                    placeholder="Type a message..."
-                                    className="w-full bg-transparent border border-white/20 rounded-lg p-4 pr-12 focus:outline-none focus:ring-1 focus:ring-white/40 resize-none"
-                                    rows="1"
-                                />
-                                <button 
-                                    onClick={sendMessage}
-                                    className="absolute right-3 bottom-3 p-1 rounded hover:bg-white/10"
-                                >
-                                    <svg viewBox="0 0 24 24" className="w-6 h-6 fill-current"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
-                                </button>
+                                {/* Input Area */}
+                                <div className="p-6 border-t border-white/10">
+                                    <div className="max-w-3xl mx-auto relative">
+                                        <textarea
+                                            value={input}
+                                            onChange={(e) => setInput(e.target.value)}
+                                            onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), sendMessage())}
+                                            placeholder="Type a message..."
+                                            className="w-full bg-transparent border border-white/20 rounded-lg p-4 pr-12 focus:outline-none focus:ring-1 focus:ring-white/40 resize-none"
+                                            rows="1"
+                                        />
+                                        <button
+                                            onClick={sendMessage}
+                                            className="absolute right-3 bottom-3 p-1 rounded hover:bg-white/10"
+                                        >
+                                            <svg viewBox="0 0 24 24" className="w-6 h-6 fill-current"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </>
+                        ) : (
+                            <div className="flex-1 flex flex-col p-8">
+                                <div className="max-w-4xl w-full mx-auto flex-1 flex flex-col">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h2 className="text-2xl font-bold">Configuration Editor</h2>
+                                        <div className="flex items-center gap-4">
+                                            <span className="text-sm text-gray-400">{saveStatus}</span>
+                                            <button
+                                                onClick={saveConfig}
+                                                className="bg-white text-black px-4 py-2 rounded font-bold hover:bg-gray-200 transition-colors"
+                                            >
+                                                Save Changes
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <textarea
+                                        value={config}
+                                        onChange={(e) => setConfig(e.target.value)}
+                                        className="flex-1 config-editor p-4 rounded-lg focus:outline-none focus:ring-1 focus:ring-white/40 resize-none"
+                                        spellCheck="false"
+                                    />
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </div>
                 </div>
             );
