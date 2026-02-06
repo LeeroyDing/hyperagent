@@ -27,7 +27,7 @@ dryRun      bool
 useTUI      bool
 modelName   string
 webPort     int
-version     = "1.1.0-web"
+version     = "0.0.5"
 )
 
 func initStorage() {
