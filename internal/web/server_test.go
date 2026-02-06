@@ -1,53 +1,38 @@
 package web
 
 import (
-"bytes"
 "net/http"
 "net/http/httptest"
-"os"
-"path/filepath"
 "testing"
 
 "github.com/LeeroyDing/hyperagent/internal/history"
-"github.com/gin-gonic/gin"
+"github.com/stretchr/testify/assert"
 )
 
-func TestConfigEndpoints(t *testing.T) {
-gin.SetMode(gin.TestMode)
+func TestWebRoutes(t *testing.T) {
 tmpDir := t.TempDir()
-configPath := filepath.Join(tmpDir, "config.yaml")
-initialConfig := "gemini_api_key: test-key"
-os.WriteFile(configPath, []byte(initialConfig), 0644)
+histMgr, _ := history.NewHistoryManager(tmpDir)
+s := NewServer(nil, histMgr, nil)
 
-histMgr, _ := history.NewHistoryManager(filepath.Join(tmpDir, "history"))
-s := NewServer(nil, histMgr)
-s.ConfigPath = configPath
-
-// Test GET /api/config
+t.Run("ServeUI", func(t *testing.T) {
 w := httptest.NewRecorder()
-req, _ := http.NewRequest("GET", "/api/config", nil)
-s.Router.ServeHTTP(w, req)
+req, _ := http.NewRequest("GET", "/ui/", nil)
+s.router.ServeHTTP(w, req)
+assert.Equal(t, http.StatusOK, w.Code)
+assert.Contains(t, w.Body.String(), "Hyperagent Web")
+})
 
-if w.Code != http.StatusOK {
-t.Errorf("expected 200, got %d", w.Code)
-}
-if w.Body.String() != initialConfig {
-t.Errorf("expected %s, got %s", initialConfig, w.Body.String())
-}
+t.Run("RedirectRoot", func(t *testing.T) {
+w := httptest.NewRecorder()
+req, _ := http.NewRequest("GET", "/", nil)
+s.router.ServeHTTP(w, req)
+assert.Equal(t, http.StatusMovedPermanently, w.Code)
+})
 
-// Test POST /api/config
-newConfig := "gemini_api_key: updated-key"
-w = httptest.NewRecorder()
-req, _ = http.NewRequest("POST", "/api/config", bytes.NewBufferString(newConfig))
-s.Router.ServeHTTP(w, req)
-
-if w.Code != http.StatusOK {
-t.Errorf("expected 200, got %d", w.Code)
-}
-
-// Verify file was updated
-data, _ := os.ReadFile(configPath)
-if string(data) != newConfig {
-t.Errorf("expected %s, got %s", newConfig, string(data))
-}
+t.Run("APISessions", func(t *testing.T) {
+w := httptest.NewRecorder()
+req, _ := http.NewRequest("GET", "/api/sessions", nil)
+s.router.ServeHTTP(w, req)
+assert.Equal(t, http.StatusOK, w.Code)
+})
 }

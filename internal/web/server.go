@@ -2,6 +2,8 @@ package web
 
 import (
 "context"
+"embed"
+"io/fs"
 "net/http"
 
 "github.com/LeeroyDing/hyperagent/internal/agent"
@@ -9,6 +11,9 @@ import (
 "github.com/LeeroyDing/hyperagent/internal/memory"
 "github.com/gin-gonic/gin"
 )
+
+//go:embed static/*
+var staticAssets embed.FS
 
 type Server struct {
 Agent   *agent.Agent
@@ -39,14 +44,18 @@ api.GET("/sessions", s.getSessions)
 api.POST("/sessions", s.createSession)
 api.GET("/sessions/:id/messages", s.getMessages)
 api.POST("/sessions/:id/messages", s.sendMessage)
-
-// Memory endpoints
 api.GET("/memory", s.searchMemory)
 api.DELETE("/memory/:id", s.deleteMemory)
 }
 
-// Serve static files
-s.router.StaticFile("/", "/root/workspaces/hyperagent/internal/web/static/index.html")
+// Serve embedded static files
+sub, _ := fs.Sub(staticAssets, "static")
+s.router.StaticFS("/ui", http.FS(sub))
+
+// Redirect root to /ui/
+s.router.GET("/", func(c *gin.Context) {
+c.Redirect(http.StatusMovedPermanently, "/ui/")
+})
 }
 
 func (s *Server) Run(addr string) error {

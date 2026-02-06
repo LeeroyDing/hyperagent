@@ -19,7 +19,7 @@ import (
 "github.com/LeeroyDing/hyperagent/internal/web"
 )
 
-var version = "v0.0.12"
+var version = "v0.0.13"
 
 func main() {
 configPath := flag.String("config", "", "Path to config file")
