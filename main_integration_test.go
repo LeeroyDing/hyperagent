@@ -56,7 +56,7 @@ resp, err := http.Get(fmt.Sprintf("http://127.0.0.1:%d/ui/", port))
 if err == nil {
 body, _ := io.ReadAll(resp.Body)
 resp.Body.Close()
-if resp.StatusCode == http.StatusOK && assert.Contains(t, string(body), "Hyperagent Web UI") {
+if resp.StatusCode == http.StatusOK && assert.Contains(t, string(body), "Hyperagent | OS Companion") {
 success = true
 break
 }

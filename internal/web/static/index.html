@@ -2,16 +2,181 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Hyperagent Web</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hyperagent | OS Companion</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .markdown-body pre { background: #2d3748; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; margin: 1rem 0; }
+        .markdown-body code { font-family: monospace; color: #e2e8f0; }
+        .chat-container::-webkit-scrollbar { width: 6px; }
+        .chat-container::-webkit-scrollbar-thumb { background-color: #4a5568; border-radius: 3px; }
+    </style>
 </head>
-<body style="background: #1a202c; color: white; font-family: sans-serif;">
-    <h1>Hyperagent Web UI</h1>
-    <p>Status: <span id="status">Loading...</span></p>
+<body class="bg-gray-900 text-gray-100 h-screen flex overflow-hidden">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-gray-800 border-r border-gray-700 flex flex-col">
+        <div class="p-4 border-b border-gray-700 flex justify-between items-center">
+            <h1 class="font-bold text-xl tracking-tight">Hyperagent</h1>
+            <button onclick="createNewSession()" class="p-2 hover:bg-gray-700 rounded-lg transition-colors" title="New Chat">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="0 12h4m-2-2v4m6-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+            </button>
+        </div>
+        <div id="session-list" class="flex-1 overflow-y-auto p-2 space-y-1">
+            <!-- Sessions will be injected here -->
+        </div>
+        <div class="p-4 border-t border-gray-700 text-xs text-gray-500">
+            v0.0.13 | Local-First
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col">
+        <!-- Header -->
+        <header class="h-16 border-b border-gray-700 flex items-center px-6 bg-gray-900/50 backdrop-blur">
+            <div id="current-session-title" class="font-medium text-gray-300">Select a conversation</div>
+        </header>
+
+        <!-- Chat Area -->
+        <div id="chat-container" class="flex-1 overflow-y-auto p-6 space-y-6 chat-container">
+            <div class="flex flex-col items-center justify-center h-full text-gray-500 space-y-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 opacity-20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                </svg>
+                <p>Welcome to Hyperagent. Start a new session to begin.</p>
+            </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="p-4 bg-gray-900">
+            <form id="chat-form" class="max-w-4xl mx-auto relative">
+                <textarea 
+                    id="user-input" 
+                    rows="1" 
+                    placeholder="Message Hyperagent..."
+                    class="w-full bg-gray-800 border border-gray-700 rounded-xl py-3 px-4 pr-12 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                    onkeydown="if(event.keyCode===13 && !event.shiftKey){event.preventDefault(); sendMessage();}"
+                ></textarea>
+                <button 
+                    type="button" 
+                    onclick="sendMessage()"
+                    class="absolute right-2 bottom-2 p-2 text-blue-500 hover:bg-gray-700 rounded-lg transition-colors"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                    </svg>
+                </button>
+            </form>
+        </div>
+    </main>
+
     <script>
-        fetch('/api/sessions')
-            .then(r => r.json())
-            .then(() => document.getElementById('status').innerText = 'Connected to API')
-            .catch(e => document.getElementById('status').innerText = 'API Error: ' + e);
+        let currentSessionId = null;
+
+        async function loadSessions() {
+            const res = await fetch('/api/sessions');
+            const sessions = await res.json();
+            const list = document.getElementById('session-list');
+            list.innerHTML = '';
+            
+            sessions.forEach(s => {
+                const div = document.createElement('div');
+                div.className = `p-3 rounded-lg cursor-pointer transition-colors ${s.id === currentSessionId ? 'bg-blue-600 text-white' : 'hover:bg-gray-700 text-gray-400'}`;
+                div.onclick = () => selectSession(s.id, s.name);
+                div.innerHTML = `
+                    <div class="truncate font-medium">${s.name || 'Untitled Session'}</div>
+                    <div class="text-xs opacity-60">${s.id.substring(0,8)}...</div>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        async function selectSession(id, name) {
+            currentSessionId = id;
+            document.getElementById('current-session-title').innerText = name || 'Untitled Session';
+            await loadMessages(id);
+            loadSessions(); // Refresh highlight
+        }
+
+        async function loadMessages(id) {
+            const res = await fetch(`/api/sessions/${id}/messages`);
+            const messages = await res.json();
+            const container = document.getElementById('chat-container');
+            container.innerHTML = '';
+
+            messages.forEach(m => {
+                const isUser = m.role === 'user';
+                const msgDiv = document.createElement('div');
+                msgDiv.className = `flex ${isUser ? 'justify-end' : 'justify-start'}`;
+                msgDiv.innerHTML = `
+                    <div class="max-w-[80%] p-4 rounded-2xl ${isUser ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-gray-800 text-gray-200 rounded-tl-none border border-gray-700'}">
+                        <div class="text-xs mb-1 opacity-50 font-bold uppercase">${m.role}</div>
+                        <div class="whitespace-pre-wrap">${m.content}</div>
+                    </div>
+                `;
+                container.appendChild(msgDiv);
+            });
+            container.scrollTop = container.scrollHeight;
+        }
+
+        async function createNewSession() {
+            const name = prompt("Enter session name:") || "New Chat";
+            const res = await fetch('/api/sessions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name })
+            });
+            const data = await res.json();
+            selectSession(data.id, name);
+        }
+
+        async function sendMessage() {
+            if (!currentSessionId) return alert("Please select or create a session first.");
+            const input = document.getElementById('user-input');
+            const content = input.value.trim();
+            if (!content) return;
+
+            input.value = '';
+            
+            // Optimistic UI update
+            const container = document.getElementById('chat-container');
+            const tempDiv = document.createElement('div');
+            tempDiv.className = 'flex justify-end';
+            tempDiv.innerHTML = `
+                <div class="max-w-[80%] p-4 rounded-2xl bg-blue-600 text-white rounded-tr-none">
+                    <div class="text-xs mb-1 opacity-50 font-bold uppercase">user</div>
+                    <div class="whitespace-pre-wrap">${content}</div>
+                </div>
+            `;
+            container.appendChild(tempDiv);
+            
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'flex justify-start animate-pulse';
+            loadingDiv.innerHTML = `
+                <div class="max-w-[80%] p-4 rounded-2xl bg-gray-800 text-gray-400 rounded-tl-none border border-gray-700">
+                    Thinking... 
+                </div>
+            `;
+            container.appendChild(loadingDiv);
+            container.scrollTop = container.scrollHeight;
+
+            try {
+                const res = await fetch(`/api/sessions/${currentSessionId}/messages`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ content })
+                });
+                await loadMessages(currentSessionId);
+            } catch (e) {
+                alert("Error sending message: " + e);
+            }
+        }
+
+        // Initial load
+        loadSessions();
     </script>
 </body>
 </html>
