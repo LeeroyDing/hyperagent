@@ -103,7 +103,7 @@ if modelName != "" {
 finalModel = modelName
 }
 
-geminiClient, err := gemini.NewClient(ctx, os.Getenv("GEMINI_API_KEY"), finalModel)
+geminiClient, err := gemini.NewClient(ctx, func() string { if cfg.GeminiAPIKey != "" { return cfg.GeminiAPIKey }; return os.Getenv("GEMINI_API_KEY") }() , finalModel)
 if err != nil {
 log.Fatalf("Failed to create Gemini client: %v", err)
 }
@@ -150,7 +150,7 @@ if modelName != "" {
 finalModel = modelName
 }
 
-geminiClient, err := gemini.NewClient(ctx, os.Getenv("GEMINI_API_KEY"), finalModel)
+geminiClient, err := gemini.NewClient(ctx, func() string { if cfg.GeminiAPIKey != "" { return cfg.GeminiAPIKey }; return os.Getenv("GEMINI_API_KEY") }() , finalModel)
 if err != nil {
 log.Fatalf("Failed to create Gemini client: %v", err)
 }

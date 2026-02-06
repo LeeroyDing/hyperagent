@@ -23,6 +23,8 @@ archives:
     # this name template makes the OS and Arch compatible with the results of `uname`.
     name_template: >-
       {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+    files:
+      - config.example.yaml
     format_overrides:
       - goos: windows
         format: zip

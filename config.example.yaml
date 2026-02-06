@@ -1,0 +1,7 @@
+model: "gemini-3-flash-preview"
+gemini_api_key: "YOUR_GEMINI_API_KEY_HERE"
+interactive_mode: true
+command_allowlist:
+  - "ls"
+  - "pwd"
+mcp_servers: []
