@@ -3,6 +3,8 @@ package memory
 import (
 "context"
 "fmt"
+"os"
+"path/filepath"
 "runtime"
 
 "github.com/philippgille/chromem-go"
@@ -20,10 +22,20 @@ embedder   Embedder
 }
 
 func NewMemory(ctx context.Context, embedder Embedder) (*Memory, error) {
-db := chromem.NewDB()
-collection, err := db.CreateCollection("agent_memory", nil, nil)
+home, _ := os.UserHomeDir()
+path := filepath.Join(home, ".hyperagent", "memory")
+if err := os.MkdirAll(path, 0755); err != nil {
+return nil, fmt.Errorf("failed to create memory directory: %w", err)
+}
+
+// Use persistent storage
+db, err := chromem.NewPersistentDB(path, false)
 if err != nil {
-return nil, fmt.Errorf("failed to create collection: %w", err)
+return nil, fmt.Errorf("failed to create persistent db: %w", err)
+}
+collection, err := db.GetOrCreateCollection("agent_memory", nil, nil)
+if err != nil {
+return nil, fmt.Errorf("failed to get or create collection: %w", err)
 }
 
 return &Memory{
@@ -70,4 +82,12 @@ return results, nil
 
 func (m *Memory) Forget(ctx context.Context, id string) error {
 return m.collection.Delete(ctx, nil, nil, id)
+}
+
+func (m *Memory) Search(ctx context.Context, query string, limit int) ([]chromem.Result, error) {
+return m.Recall(ctx, query, limit)
+}
+
+func (m *Memory) List(ctx context.Context) ([]chromem.Document, error) {
+return nil, nil
 }

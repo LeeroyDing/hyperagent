@@ -91,7 +91,7 @@ Required: []string{"path", "old_text", "new_text"},
 },
 },
 {
-Name:        "memorize",
+Name:        "memory_save",
 Description: "Save information to long-term memory",
 Parameters: &genai.Schema{
 Type: genai.TypeObject,
@@ -103,7 +103,7 @@ Required: []string{"id", "content"},
 },
 },
 {
-Name:        "recall",
+Name:        "memory_load",
 Description: "Search long-term memory",
 Parameters: &genai.Schema{
 Type: genai.TypeObject,
@@ -114,6 +114,17 @@ Properties: map[string]*genai.Schema{
 Required: []string{"query"},
 },
 },
+{
+Name:        "memory_forget",
+Description: "Delete information from long-term memory",
+Parameters: &genai.Schema{
+Type: genai.TypeObject,
+Properties: map[string]*genai.Schema{
+"id": {Type: genai.TypeString, Description: "ID of the memory to delete"},
+},
+Required: []string{"id"},
+},
+},
 },
 },
 }
@@ -121,6 +132,19 @@ Required: []string{"query"},
 
 func (a *Agent) Run(ctx context.Context, sessionID, prompt string) (string, error) {
 slog.Info("Starting agentic loop", "session", sessionID, "prompt", prompt)
+
+// 1. RAG Step: Recall relevant memories
+var ragContext string
+results, err := a.Memory.Recall(ctx, prompt, 5)
+if err == nil && len(results) > 0 {
+var sb strings.Builder
+sb.WriteString("\n[LONG-TERM MEMORY CONTEXT]\n")
+for _, r := range results {
+sb.WriteString(fmt.Sprintf("- %s\n", r.Content))
+}
+ragContext = sb.String()
+slog.Info("RAG context injected", "count", len(results))
+}
 
 hist, err := a.History.LoadHistory(sessionID)
 if err != nil {
@@ -131,7 +155,16 @@ var messages []gemini.Message
 for _, m := range hist {
 messages = append(messages, gemini.Message{Role: m.Role, Content: m.Content})
 }
-messages = append(messages, gemini.Message{Role: "user", Content: prompt})
+
+// Inject RAG context into the current prompt if available
+finalPrompt := prompt
+if ragContext != "" {
+finalPrompt = fmt.Sprintf("%s\n\nUser Prompt: %s", ragContext, prompt)
+}
+messages = append(messages, gemini.Message{Role: "user", Content: finalPrompt})
+
+// Save user message to history (original prompt)
+a.History.AddMessage(sessionID, "user", prompt)
 
 tools := a.getTools()
 textResp, toolCalls, err := a.Gemini.GenerateContent(ctx, messages, tools)
@@ -143,7 +176,7 @@ for len(toolCalls) > 0 {
 var toolResponses []gemini.ToolResponse
 for _, tc := range toolCalls {
 slog.Info("Handling tool call", "name", tc.Name, "args", tc.Arguments)
-result, err := a.handleToolCall(ctx, tc)
+result, err := a.handleToolCall(ctx, sessionID, tc)
 if err != nil {
 result = fmt.Sprintf("Error: %v", err)
 }
@@ -153,26 +186,28 @@ Content: result,
 })
 }
 
-// Update messages with the assistant's tool calls and the responses
-// Note: In a real implementation, we'd need to handle the history more carefully
-// for the multi-turn tool calling loop.
 textResp, toolCalls, err = a.Gemini.SendToolResponse(ctx, messages, tools, toolResponses)
 if err != nil {
 return "", fmt.Errorf("gemini tool response error: %w", err)
 }
 }
 
+// Save assistant response to history
+if textResp != "" {
+a.History.AddMessage(sessionID, "model", textResp)
+}
+
 return textResp, nil
 }
 
-func (a *Agent) handleToolCall(ctx context.Context, tc gemini.ToolCall) (string, error) {
+func (a *Agent) handleToolCall(ctx context.Context, sessionID string, tc gemini.ToolCall) (string, error) {
 switch tc.Name {
 case "execute_command":
 cmd := tc.Arguments["command"].(string)
 if !a.confirmAction(fmt.Sprintf("Execute command: %s", cmd)) {
 return "Action cancelled by user", nil
 }
-return a.Executor.Execute(cmd)
+return a.Executor.Execute(sessionID, cmd)
 case "read_file":
 path := tc.Arguments["path"].(string)
 start := int(tc.Arguments["start"].(float64))
@@ -197,7 +232,7 @@ if err != nil {
 return "", err
 }
 return "Text replaced successfully", nil
-case "memorize":
+case "memory_save":
 id := tc.Arguments["id"].(string)
 content := tc.Arguments["content"].(string)
 err := a.Memory.Memorize(ctx, id, content, nil)
@@ -205,7 +240,7 @@ if err != nil {
 return "", err
 }
 return "Information memorized", nil
-case "recall":
+case "memory_load":
 query := tc.Arguments["query"].(string)
 limit := 5
 if l, ok := tc.Arguments["limit"]; ok {
@@ -220,6 +255,13 @@ for _, r := range results {
 sb.WriteString(fmt.Sprintf("ID: %s\nContent: %s\n\n", r.ID, r.Content))
 }
 return sb.String(), nil
+case "memory_forget":
+id := tc.Arguments["id"].(string)
+err := a.Memory.Forget(ctx, id)
+if err != nil {
+return "", err
+}
+return "Memory forgotten", nil
 default:
 return "", fmt.Errorf("unknown tool: %s", tc.Name)
 }

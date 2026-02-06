@@ -7,6 +7,8 @@ import (
 "path/filepath"
 "sort"
 "time"
+
+"github.com/google/uuid"
 )
 
 type Message struct {
@@ -16,10 +18,10 @@ Time    time.Time `json:"time"`
 }
 
 type Session struct {
-ID        string    `json:"id"` 
-Name      string    `json:"name"` 
-UpdatedAt time.Time `json:"updated_at"` 
-Messages  []Message `json:"messages,omitempty"` 
+ID        string    `json:"id"`
+Name      string    `json:"name"`
+UpdatedAt time.Time `json:"updated_at"`
+Messages  []Message `json:"messages,omitempty"`
 }
 
 type HistoryManager struct {
@@ -47,6 +49,22 @@ return filepath.Join(h.StorageDir, sessionID+".jsonl")
 
 func (h *HistoryManager) GetMetadataPath(sessionID string) string {
 return filepath.Join(h.StorageDir, sessionID+".meta.json")
+}
+
+func (h *HistoryManager) CreateSession(name string) (string, error) {
+id := uuid.New().String()
+if name == "" {
+name = "New Conversation"
+}
+if err := h.SetSessionName(id, name); err != nil {
+return "", err
+}
+// Create an empty history file
+path := h.GetSessionPath(id)
+if err := os.WriteFile(path, []byte(""), 0644); err != nil {
+return "", err
+}
+return id, nil
 }
 
 func (h *HistoryManager) AddMessage(sessionID, role, content string) error {
