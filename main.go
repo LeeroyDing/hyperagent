@@ -108,7 +108,14 @@ func runAgent(prompt string) {
 ctx := context.Background()
 cfg, err := config.LoadConfig(cfgFile)
 if err != nil {
+if os.IsNotExist(err) && cfgFile == "" {
+cfg, err = config.RunOOBE()
+if err != nil {
+log.Fatalf("Failed to run setup: %v", err)
+}
+} else {
 log.Fatalf("Failed to load config: %v", err)
+}
 }
 
 finalModel := cfg.Model
@@ -160,7 +167,14 @@ func startWebServer() {
 ctx := context.Background()
 cfg, err := config.LoadConfig(cfgFile)
 if err != nil {
+if os.IsNotExist(err) && cfgFile == "" {
+cfg, err = config.RunOOBE()
+if err != nil {
+log.Fatalf("Failed to run setup: %v", err)
+}
+} else {
 log.Fatalf("Failed to load config: %v", err)
+}
 }
 
 finalModel := cfg.Model
