@@ -16,16 +16,25 @@ Time    time.Time `json:"time"`
 }
 
 type Session struct {
-ID        string    `json:"id"`
-UpdatedAt time.Time `json:"updated_at"`
-Messages  []Message `json:"messages,omitempty"`
+ID        string    `json:"id"` 
+Name      string    `json:"name"` 
+UpdatedAt time.Time `json:"updated_at"` 
+Messages  []Message `json:"messages,omitempty"` 
 }
 
 type HistoryManager struct {
 StorageDir string
 }
 
+func GetDefaultHistoryDir() string {
+home, _ := os.UserHomeDir()
+return filepath.Join(home, ".hyperagent", "history")
+}
+
 func NewHistoryManager(storageDir string) (*HistoryManager, error) {
+if storageDir == "" {
+storageDir = GetDefaultHistoryDir()
+}
 if err := os.MkdirAll(storageDir, 0755); err != nil {
 return nil, fmt.Errorf("failed to create storage directory: %w", err)
 }
@@ -34,6 +43,10 @@ return &HistoryManager{StorageDir: storageDir}, nil
 
 func (h *HistoryManager) GetSessionPath(sessionID string) string {
 return filepath.Join(h.StorageDir, sessionID+".jsonl")
+}
+
+func (h *HistoryManager) GetMetadataPath(sessionID string) string {
+return filepath.Join(h.StorageDir, sessionID+".meta.json")
 }
 
 func (h *HistoryManager) AddMessage(sessionID, role, content string) error {
@@ -60,6 +73,29 @@ return fmt.Errorf("failed to write to history file: %w", err)
 }
 
 return nil
+}
+
+func (h *HistoryManager) SetSessionName(sessionID, name string) error {
+path := h.GetMetadataPath(sessionID)
+meta := map[string]string{"name": name}
+data, err := json.Marshal(meta)
+if err != nil {
+return err
+}
+return os.WriteFile(path, data, 0644)
+}
+
+func (h *HistoryManager) GetSessionName(sessionID string) string {
+path := h.GetMetadataPath(sessionID)
+data, err := os.ReadFile(path)
+if err != nil {
+return "New Conversation"
+}
+var meta map[string]string
+if err := json.Unmarshal(data, &meta); err != nil {
+return "New Conversation"
+}
+return meta["name"]
 }
 
 func (h *HistoryManager) LoadHistory(sessionID string) ([]Message, error) {
@@ -104,8 +140,10 @@ if err != nil {
 continue
 }
 
+id := f.Name()[:len(f.Name())-6]
 sessions = append(sessions, Session{
-ID:        f.Name()[:len(f.Name())-6], // remove .jsonl
+ID:        id,
+Name:      h.GetSessionName(id),
 UpdatedAt: info.ModTime(),
 })
 }

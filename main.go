@@ -5,6 +5,7 @@ import (
 "fmt"
 "log"
 "os"
+"path/filepath"
 
 "github.com/LeeroyDing/hyperagent/internal/agent"
 "github.com/LeeroyDing/hyperagent/internal/config"
@@ -29,7 +30,19 @@ webPort     int
 version     = "1.1.0-web"
 )
 
+func initStorage() {
+home, _ := os.UserHomeDir()
+baseDir := filepath.Join(home, ".hyperagent")
+historyDir := filepath.Join(baseDir, "history")
+
+if err := os.MkdirAll(historyDir, 0755); err != nil {
+log.Fatalf("Failed to create storage directory: %v", err)
+}
+}
+
 func main() {
+initStorage()
+
 rootCmd := &cobra.Command{
 Use:   "hyperagent [prompt]",
 Short: "Hyperagent is a high-agency autonomous AI assistant",
@@ -49,7 +62,7 @@ runAgent(prompt)
 },
 }
 
-rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "config.yaml", "config file (default is config.yaml)")
+rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is ~/.hyperagent/config.yaml)")
 rootCmd.PersistentFlags().BoolVarP(&interactive, "interactive", "i", false, "enable interactive safety mode")
 rootCmd.PersistentFlags().BoolVar(&dryRun, "dry-run", false, "preview actions without executing them")
 rootCmd.PersistentFlags().BoolVar(&useTUI, "tui", false, "use rich terminal user interface")
@@ -103,7 +116,12 @@ if modelName != "" {
 finalModel = modelName
 }
 
-geminiClient, err := gemini.NewClient(ctx, func() string { if cfg.GeminiAPIKey != "" { return cfg.GeminiAPIKey }; return os.Getenv("GEMINI_API_KEY") }() , finalModel)
+geminiClient, err := gemini.NewClient(ctx, func() string {
+if cfg.GeminiAPIKey != "" {
+return cfg.GeminiAPIKey
+}
+return os.Getenv("GEMINI_API_KEY")
+}(), finalModel)
 if err != nil {
 log.Fatalf("Failed to create Gemini client: %v", err)
 }
@@ -111,7 +129,7 @@ log.Fatalf("Failed to create Gemini client: %v", err)
 exec := executor.NewShellExecutor(cfg.CommandAllowlist)
 mem, _ := memory.NewMemory(ctx, geminiClient)
 mcpMgr := mcp.NewMCPManager()
-hist, _ := history.NewHistoryManager("history")
+hist, _ := history.NewHistoryManager("")
 
 a := agent.NewAgent(geminiClient, exec, mem, mcpMgr, hist, interactive || cfg.InteractiveMode)
 a.DryRun = dryRun
@@ -150,7 +168,12 @@ if modelName != "" {
 finalModel = modelName
 }
 
-geminiClient, err := gemini.NewClient(ctx, func() string { if cfg.GeminiAPIKey != "" { return cfg.GeminiAPIKey }; return os.Getenv("GEMINI_API_KEY") }() , finalModel)
+geminiClient, err := gemini.NewClient(ctx, func() string {
+if cfg.GeminiAPIKey != "" {
+return cfg.GeminiAPIKey
+}
+return os.Getenv("GEMINI_API_KEY")
+}(), finalModel)
 if err != nil {
 log.Fatalf("Failed to create Gemini client: %v", err)
 }
@@ -158,14 +181,14 @@ log.Fatalf("Failed to create Gemini client: %v", err)
 exec := executor.NewShellExecutor(cfg.CommandAllowlist)
 mem, _ := memory.NewMemory(ctx, geminiClient)
 mcpMgr := mcp.NewMCPManager()
-hist, _ := history.NewHistoryManager("history")
+hist, _ := history.NewHistoryManager("")
 
 a := agent.NewAgent(geminiClient, exec, mem, mcpMgr, hist, interactive || cfg.InteractiveMode)
 a.DryRun = dryRun
 
 srv := web.NewServer(a, hist)
-fmt.Printf("Starting web server on :%d...\n", webPort)
-if err := srv.Run(fmt.Sprintf(":%d", webPort)); err != nil {
+fmt.Printf("Starting web server on 127.0.0.1:%d...\n", webPort)
+if err := srv.Run(fmt.Sprintf("127.0.0.1:%d", webPort)); err != nil {
 log.Fatalf("Web server failed: %v", err)
 }
 }

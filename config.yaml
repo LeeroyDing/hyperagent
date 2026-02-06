@@ -1,14 +1,7 @@
-model: gemini-3-flash-preview
-mcp_servers:
-  - name: filesystem
-    command: npx
-    args: ["-y", "@modelcontextprotocol/server-filesystem", "/root/workspaces/hyperagent"]
-
+model: "gemini-3-flash-preview"
+gemini_api_key: ""
 interactive_mode: true
 command_allowlist:
-  - ls
-  - cat
-  - echo
-  - pwd
-  - go
-  - git
+  - "ls"
+  - "pwd"
+mcp_servers: []

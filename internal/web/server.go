@@ -3,10 +3,13 @@ package web
 import (
 "context"
 "embed"
+"fmt"
 "io/fs"
 "net/http"
+"strings"
 
 "github.com/LeeroyDing/hyperagent/internal/agent"
+"github.com/LeeroyDing/hyperagent/internal/gemini"
 "github.com/LeeroyDing/hyperagent/internal/history"
 "github.com/gin-contrib/cors"
 "github.com/gin-gonic/gin"
@@ -81,7 +84,7 @@ c.JSON(http.StatusOK, messages)
 func (s *Server) sendMessage(c *gin.Context) {
 id := c.Param("id")
 var req struct {
-Content string `json:"content"` // Fixed backticks
+Content string `json:"content"` 
 }
 if err := c.ShouldBindJSON(&req); err != nil {
 c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -107,7 +110,22 @@ c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 return
 }
 
+// Auto-name session if it's the first message
+if s.History.GetSessionName(id) == "New Conversation" {
+go s.autoNameSession(id, req.Content)
+}
+
 c.JSON(http.StatusOK, gin.H{"role": "assistant", "content": response})
+}
+
+func (s *Server) autoNameSession(id, firstMessage string) {
+prompt := fmt.Sprintf("Generate a short, concise title (max 5 words) for a conversation starting with: '%s'. Return ONLY the title.", firstMessage)
+name, err := s.Agent.Gemini.GenerateContent(context.Background(), []gemini.Message{
+{Role: "user", Content: prompt},
+})
+if err == nil {
+s.History.SetSessionName(id, strings.TrimSpace(name))
+}
 }
 
 func (s *Server) Run(addr string) error {
