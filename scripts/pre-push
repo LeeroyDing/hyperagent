@@ -1,5 +1,14 @@
 #!/bin/sh
 
+# Ensure Go is in the PATH (especially for Linuxbrew users)
+export PATH="$PATH:/home/linuxbrew/.linuxbrew/bin:/usr/local/go/bin"
+
+# Check if go is available
+if ! command -v go >/dev/null 2>&1; then
+  echo "Error: 'go' command not found. Cannot run tests."
+  exit 1
+fi
+
 echo "Running tests before push..."
 go test ./...
 
