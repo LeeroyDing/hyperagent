@@ -19,7 +19,7 @@ import (
 "github.com/LeeroyDing/hyperagent/internal/web"
 )
 
-var version = "v0.0.9"
+var version = "v0.0.10"
 
 func main() {
 configPath := flag.String("config", "", "Path to config file")
@@ -37,8 +37,16 @@ slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Lev
 
 cfg, err := config.LoadConfig(*configPath)
 if err != nil {
+if os.IsNotExist(err) {
+cfg, err = config.RunOOBE()
+if err != nil {
+slog.Error("Failed to run setup", "error", err)
+os.Exit(1)
+}
+} else {
 slog.Error("Failed to load config", "error", err)
 os.Exit(1)
+}
 }
 
 ctx := context.Background()
