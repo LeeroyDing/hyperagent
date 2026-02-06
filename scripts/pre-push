@@ -12,9 +12,14 @@ if [ $? -ne 0 ]; then
 fi
 
 # 2. Check if we are pushing a tag
-# Git passes pushed refs to stdin: <local ref> <local sha1> <remote ref> <remote sha1>
 while read local_ref local_sha remote_ref remote_sha
 do
+  # If local_sha is all zeros, it's a deletion. Skip validation.
+  if [ "$local_sha" = "0000000000000000000000000000000000000000" ]; then
+    echo "Deletion detected for $remote_ref. Skipping release validation."
+    continue
+  fi
+
   if echo "$remote_ref" | grep -q "^refs/tags/"; then
     TAG_NAME=$(echo "$remote_ref" | sed 's|refs/tags/||')
     echo "Tag push detected ($TAG_NAME). Running release dry run..."
