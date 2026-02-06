@@ -16,10 +16,15 @@ import (
 "github.com/LeeroyDing/hyperagent/internal/token"
 )
 
+// GeminiClient defines the interface for interacting with Gemini
+type GeminiClient interface {
+GenerateContent(ctx context.Context, messages []gemini.Message) (string, error)
+}
+
 type Agent struct {
 InteractiveMode bool
 DryRun          bool
-Gemini          *gemini.Client
+Gemini          GeminiClient
 Executor        *executor.ShellExecutor
 Memory          *memory.Memory
 MCP             *mcp.MCPManager
@@ -29,7 +34,7 @@ Editor          *editor.FileEditor
 Orchestrator    *orchestrator.Orchestrator
 }
 
-func NewAgent(gemini *gemini.Client, executor *executor.ShellExecutor, memory *memory.Memory, mcpMgr *mcp.MCPManager, historyMgr *history.HistoryManager, interactiveMode bool) *Agent {
+func NewAgent(gemini GeminiClient, executor *executor.ShellExecutor, memory *memory.Memory, mcpMgr *mcp.MCPManager, historyMgr *history.HistoryManager, interactiveMode bool) *Agent {
 return &Agent{
 Gemini:          gemini,
 Executor:        executor,
@@ -45,22 +50,17 @@ Orchestrator:    orchestrator.NewOrchestrator(),
 func (a *Agent) Run(ctx context.Context, sessionID, prompt string) (string, error) {
 slog.Info("Starting agentic loop", "session", sessionID, "prompt", prompt)
 
-// Load history for context
 hist, err := a.History.LoadHistory(sessionID)
 if err != nil {
 return "", fmt.Errorf("failed to load history: %w", err)
 }
 
-// Convert history to Gemini messages
 var messages []gemini.Message
 for _, m := range hist {
 messages = append(messages, gemini.Message{Role: m.Role, Content: m.Content})
 }
-
-// Add current prompt
 messages = append(messages, gemini.Message{Role: "user", Content: prompt})
 
-// Call Gemini
 resp, err := a.Gemini.GenerateContent(ctx, messages)
 if err != nil {
 return "", fmt.Errorf("gemini error: %w", err)

@@ -22,9 +22,10 @@ import (
 var staticFiles embed.FS
 
 type Server struct {
-Agent   *agent.Agent
-History *history.HistoryManager
-Router  *gin.Engine
+Agent      *agent.Agent
+History    *history.HistoryManager
+Router     *gin.Engine
+ConfigPath string
 }
 
 func NewServer(a *agent.Agent, h *history.HistoryManager) *Server {
@@ -32,9 +33,10 @@ r := gin.Default()
 r.Use(cors.Default())
 
 s := &Server{
-Agent:   a,
-History: h,
-Router:  r,
+Agent:      a,
+History:    h,
+Router:     r,
+ConfigPath: config.GetDefaultConfigPath(),
 }
 
 s.setupRoutes()
@@ -42,7 +44,6 @@ return s
 }
 
 func (s *Server) setupRoutes() {
-// API routes
 api := s.Router.Group("/api")
 {
 api.GET("/sessions", s.listSessions)
@@ -53,7 +54,6 @@ api.GET("/config", s.getConfig)
 api.POST("/config", s.updateConfig)
 }
 
-// Static files
 sub, _ := fs.Sub(staticFiles, "static")
 s.Router.StaticFS("/ui", http.FS(sub))
 s.Router.GET("/", func(c *gin.Context) {
@@ -88,38 +88,33 @@ c.JSON(http.StatusOK, messages)
 func (s *Server) sendMessage(c *gin.Context) {
 id := c.Param("id")
 var req struct {
-Content string `json:"content"` 
+Content string `json:"content"`
 }
 if err := c.ShouldBindJSON(&req); err != nil {
 c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 return
 }
 
-// Add user message to history
 if err := s.History.AddMessage(id, "user", req.Content); err != nil {
 c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 return
 }
 
-// Run agent
 response, err := s.Agent.Run(context.Background(), id, req.Content)
 if err != nil {
 c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 return
 }
 
-// Add assistant response to history
 if err := s.History.AddMessage(id, "assistant", response); err != nil {
 c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 return
 }
 
-// Auto-name session if it's the first message
 if s.History.GetSessionName(id) == "New Conversation" {
 go s.autoNameSession(id, req.Content)
 }
 
-// Trigger memory distillation periodically (e.g., every 10 messages)
 messages, _ := s.History.LoadHistory(id)
 if len(messages)%10 == 0 {
 go s.Agent.Distill(context.Background(), id)
@@ -139,8 +134,7 @@ s.History.SetSessionName(id, strings.TrimSpace(name))
 }
 
 func (s *Server) getConfig(c *gin.Context) {
-path := config.GetDefaultConfigPath()
-data, err := os.ReadFile(path)
+data, err := os.ReadFile(s.ConfigPath)
 if err != nil {
 c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 return
@@ -155,8 +149,7 @@ c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 return
 }
 
-path := config.GetDefaultConfigPath()
-if err := os.WriteFile(path, data, 0644); err != nil {
+if err := os.WriteFile(s.ConfigPath, data, 0644); err != nil {
 c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 return
 }
