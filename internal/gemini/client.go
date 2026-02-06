@@ -2,6 +2,7 @@ package gemini
 
 import (
 "context"
+"encoding/json"
 "fmt"
 "log/slog"
 "time"
@@ -64,6 +65,8 @@ Role:  role,
 // Last message is the prompt
 lastMsg := messages[len(messages)-1]
 
+slog.Debug("Gemini API Request", "messages", messages, "tools_count", len(tools))
+
 var lastErr error
 for i := 0; i < 3; i++ {
 resp, err := cs.SendMessage(ctx, genai.Text(lastMsg.Content))
@@ -86,6 +89,10 @@ Arguments: p.Args,
 })
 }
 }
+
+respJSON, _ := json.Marshal(resp.Candidates[0].Content)
+slog.Debug("Gemini API Response", "content", string(respJSON))
+
 return textResponse, toolCalls, nil
 }
 lastErr = err
@@ -119,6 +126,8 @@ Response: map[string]interface{}{"result": tr.Content},
 })
 }
 
+slog.Debug("Gemini API Tool Response Request", "tool_responses", toolResponses)
+
 resp, err := cs.SendMessage(ctx, parts...)
 if err != nil {
 return "", nil, err
@@ -137,6 +146,10 @@ Arguments: p.Args,
 })
 }
 }
+
+respJSON, _ := json.Marshal(resp.Candidates[0].Content)
+slog.Debug("Gemini API Response (after tool)", "content", string(respJSON))
+
 return textResponse, toolCalls, nil
 }
 

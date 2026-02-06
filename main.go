@@ -4,6 +4,7 @@ import (
 "context"
 "fmt"
 "log"
+"log/slog"
 "os"
 "path/filepath"
 
@@ -27,7 +28,8 @@ dryRun      bool
 useTUI      bool
 modelName   string
 webPort     int
-version     = "0.0.5"
+debug       bool
+version     = "0.0.6"
 )
 
 func initStorage() {
@@ -47,6 +49,14 @@ rootCmd := &cobra.Command{
 Use:   "hyperagent [prompt]",
 Short: "Hyperagent is a high-agency autonomous AI assistant",
 Args:  cobra.MaximumNArgs(1),
+PersistentPreRun: func(cmd *cobra.Command, args []string) {
+level := slog.LevelInfo
+if debug {
+level = slog.LevelDebug
+}
+logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: level}))
+slog.SetDefault(logger)
+},
 Run: func(cmd *cobra.Command, args []string) {
 if len(args) == 0 && !interactive {
 cmd.Help()
@@ -67,6 +77,7 @@ rootCmd.PersistentFlags().BoolVarP(&interactive, "interactive", "i", false, "ena
 rootCmd.PersistentFlags().BoolVar(&dryRun, "dry-run", false, "preview actions without executing them")
 rootCmd.PersistentFlags().BoolVar(&useTUI, "tui", false, "use rich terminal user interface")
 rootCmd.PersistentFlags().StringVar(&modelName, "model", "", "override model name")
+rootCmd.PersistentFlags().BoolVarP(&debug, "debug", "d", false, "enable debug logging")
 
 healthCmd := &cobra.Command{
 Use:   "health",
