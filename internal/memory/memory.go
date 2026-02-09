@@ -21,9 +21,11 @@ collection *chromem.Collection
 embedder   Embedder
 }
 
-func NewMemory(ctx context.Context, embedder Embedder) (*Memory, error) {
+func NewMemory(ctx context.Context, embedder Embedder, path string) (*Memory, error) {
+if path == "" {
 home, _ := os.UserHomeDir()
-path := filepath.Join(home, ".hyperagent", "memory")
+path = filepath.Join(home, ".hyperagent", "memory")
+}
 if err := os.MkdirAll(path, 0755); err != nil {
 return nil, fmt.Errorf("failed to create memory directory: %w", err)
 }

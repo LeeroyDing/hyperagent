@@ -1,12 +1,19 @@
-.PHONY: test build install-hooks
+.PHONY: all build test lint clean
+
+all: build
+
+build:
+go build -o hyperagent main.go
 
 test:
 go test -v ./...
 
-build:
-go build -o bin/hyperagent main.go
+lint:
+/root/go/bin/golangci-lint run ./...
 
-install-hooks:
-cp scripts/pre-push .git/hooks/pre-push
-chmod +x .git/hooks/pre-push
-echo "Git hooks installed successfully."
+clean:
+rm -f hyperagent
+
+coverage:
+go test -coverprofile=coverage.out ./...
+go tool cover -func=coverage.out

@@ -8,14 +8,14 @@ import (
 type MockEmbedder struct{}
 
 func (m *MockEmbedder) EmbedContent(ctx context.Context, text string) ([]float32, error) {
-return []float32{0.1, 0.2, 0.3}, nil
+return make([]float32, 1536), nil
 }
 
 func TestMemory(t *testing.T) {
 ctx := context.Background()
 mockEmbedder := &MockEmbedder{}
 
-mem, err := NewMemory(ctx, mockEmbedder)
+mem, err := NewMemory(ctx, mockEmbedder, t.TempDir())
 if err != nil {
 t.Fatalf("NewMemory() error = %v", err)
 }

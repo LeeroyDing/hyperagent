@@ -65,7 +65,7 @@ os.Exit(1)
 
 exec := executor.NewShellExecutor(cfg.CommandAllowlist)
 
-mem, err := memory.NewMemory(ctx, gClient)
+mem, err := memory.NewMemory(ctx, gClient, "")
 if err != nil {
 slog.Error("Failed to initialize memory", "error", err)
 os.Exit(1)

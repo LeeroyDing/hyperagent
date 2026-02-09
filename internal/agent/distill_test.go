@@ -23,7 +23,7 @@ return "", nil, nil
 type mockEmbedder struct{}
 
 func (m *mockEmbedder) EmbedContent(ctx context.Context, text string) ([]float32, error) {
-return []float32{0.1, 0.2, 0.3}, nil
+return make([]float32, 1536), nil
 }
 
 func TestDistill(t *testing.T) {
@@ -38,7 +38,7 @@ for i := 0; i < 6; i++ {
 histMgr.AddMessage(sessionID, "user", "hello")
 }
 
-mem, _ := memory.NewMemory(ctx, &mockEmbedder{})
+mem, _ := memory.NewMemory(ctx, &mockEmbedder{}, t.TempDir())
 
 a := &Agent{
 Gemini:  &mockGemini{},
