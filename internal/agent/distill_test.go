@@ -20,6 +20,14 @@ func (m *mockGemini) SendToolResponse(ctx context.Context, messages []gemini.Mes
 return "", nil, nil
 }
 
+func (m *mockGemini) EmbedContent(ctx context.Context, text string) ([]float32, error) {
+return make([]float32, 1536), nil
+}
+
+func (m *mockGemini) Close() error {
+return nil
+}
+
 type mockEmbedder struct{}
 
 func (m *mockEmbedder) EmbedContent(ctx context.Context, text string) ([]float32, error) {

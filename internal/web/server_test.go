@@ -19,7 +19,7 @@ w := httptest.NewRecorder()
 req, _ := http.NewRequest("GET", "/ui/", nil)
 s.router.ServeHTTP(w, req)
 assert.Equal(t, http.StatusOK, w.Code)
-assert.Contains(t, w.Body.String(), "Hyperagent Web")
+assert.Contains(t, w.Body.String(), "Hyperagent | OS Companion")
 })
 
 t.Run("RedirectRoot", func(t *testing.T) {
