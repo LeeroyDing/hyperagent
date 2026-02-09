@@ -1,19 +1,19 @@
-.PHONY: all build test lint clean
+.PHONY: all build test lint clean coverage
 
 all: build
 
 build:
-go build -o hyperagent main.go
+	go build -o hyperagent main.go
 
 test:
-go test -v ./...
+	go test -v ./...
 
 lint:
-/root/go/bin/golangci-lint run ./...
+	/root/go/bin/golangci-lint run ./...
 
 clean:
-rm -f hyperagent
+	rm -f hyperagent
 
 coverage:
-go test -coverprofile=coverage.out ./...
-go tool cover -func=coverage.out
+	go test -coverprofile=coverage.out ./...
+	go tool cover -func=coverage.out

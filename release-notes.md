@@ -20,3 +20,6 @@ Clone the repository and run:
 bash
 make build
 
+
+### Known Issues
+- **Port Conflict**: The Web UI runs on port 3001, which may conflict with other services like the Gemini Web UI backend. Please ensure port 3001 is free before running.
