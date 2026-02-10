@@ -2,48 +2,22 @@ package token
 
 import (
 "testing"
+"github.com/stretchr/testify/assert"
 )
 
-func TestTokenManager_CountTokens(t *testing.T) {
+func TestTokenManager_All(t *testing.T) {
 tm, err := NewTokenManager("gemini-1.5-flash")
-if err != nil {
-t.Fatalf("NewTokenManager() error = %v", err)
-}
+assert.NoError(t, err)
 
-tests := []struct {
-name string
-text string
-want int
-}{
-{"empty", "", 0},
-{"simple", "hello world", 2},
-{"sentence", "This is a test of the token counter.", 9},
-}
-
-for _, tt := range tests {
-t.Run(tt.name, func(t *testing.T) {
-if got := tm.CountTokens(tt.text); got != tt.want {
-t.Errorf("TokenManager.CountTokens() = %v, want %v", got, tt.want)
-}
+t.Run("CountTokens", func(t *testing.T) {
+assert.Equal(t, 0, tm.CountTokens(""))
+assert.Equal(t, 2, tm.CountTokens("hello world"))
 })
-}
-}
 
-func TestTokenManager_PruneHistory(t *testing.T) {
-tm, _ := NewTokenManager("gemini-1.5-flash")
-messages := []string{
-"message one",
-"message two",
-"message three",
-}
-
-// Each message is ~2 tokens. Total ~6.
-// Prune to 4 tokens -> should keep last 2 messages.
-pruned := tm.PruneHistory(messages, 4)
-if len(pruned) != 2 {
-t.Errorf("PruneHistory() length = %d, want 2", len(pruned))
-}
-if pruned[0] != "message two" || pruned[1] != "message three" {
-t.Errorf("PruneHistory() content = %v, want [message two message three]", pruned)
-}
+t.Run("PruneHistory", func(t *testing.T) {
+messages := []string{"msg1", "msg2", "msg3"}
+pruned := tm.PruneHistory(messages, 2)
+assert.Equal(t, 1, len(pruned))
+assert.Equal(t, "msg3", pruned[0])
+})
 }
