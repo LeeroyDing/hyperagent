@@ -1,0 +1,77 @@
+=== RUN   TestShellExecutor_Execute
+=== RUN   TestShellExecutor_Execute/allowed_command
+coverage: 47.8% of statements
+panic: test timed out after 10m0s
+	running tests:
+		TestShellExecutor_Execute (10m0s)
+		TestShellExecutor_Execute/allowed_command (10m0s)
+
+goroutine 9 [running]:
+testing.(*M).startAlarm.func1()
+	/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.25.7.linux-amd64/src/testing/testing.go:2682 +0x345
+created by time.goFunc
+	/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.25.7.linux-amd64/src/time/sleep.go:215 +0x2d
+
+goroutine 1 [chan receive]:
+testing.(*T).Run(0xc000003880, {0x5fbab8?, 0xc000072b30?}, 0x606000)
+	/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.25.7.linux-amd64/src/testing/testing.go:2005 +0x485
+testing.runTests.func1(0xc000003880)
+	/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.25.7.linux-amd64/src/testing/testing.go:2477 +0x37
+testing.tRunner(0xc000003880, 0xc000072c70)
+	/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.25.7.linux-amd64/src/testing/testing.go:1934 +0xea
+testing.runTests(0xc000010060, {0x777420, 0x1, 0x1}, {0x7?, 0xc00006c900?, 0x7825a0?})
+	/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.25.7.linux-amd64/src/testing/testing.go:2475 +0x4b4
+testing.(*M).Run(0xc000076140)
+	/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.25.7.linux-amd64/src/testing/testing.go:2337 +0x63a
+main.main()
+	_testmain.go:55 +0x9b
+
+goroutine 7 [chan receive]:
+testing.(*T).Run(0xc000003a40, {0x5f8629?, 0x752fb8?}, 0xc000122140)
+	/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.25.7.linux-amd64/src/testing/testing.go:2005 +0x485
+github.com/LeeroyDing/hyperagent/internal/executor.TestShellExecutor_Execute(0xc000003a40)
+	/root/workspaces/hyperagent/internal/executor/executor_test.go:39 +0x31f
+testing.tRunner(0xc000003a40, 0x606000)
+	/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.25.7.linux-amd64/src/testing/testing.go:1934 +0xea
+created by testing.(*T).Run in goroutine 1
+	/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.25.7.linux-amd64/src/testing/testing.go:1997 +0x465
+
+goroutine 8 [syscall]:
+syscall.Syscall(0x0, 0x5, 0xc00013c013, 0xfed)
+	/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.25.7.linux-amd64/src/syscall/syscall_linux.go:74 +0x25
+syscall.read(0xc000014360?, {0xc00013c013?, 0xc000010101?, 0x0?})
+	/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.25.7.linux-amd64/src/syscall/zsyscall_linux_amd64.go:736 +0x38
+syscall.Read(...)
+	/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.25.7.linux-amd64/src/syscall/syscall_unix.go:183
+internal/poll.ignoringEINTRIO(...)
+	/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.25.7.linux-amd64/src/internal/poll/fd_unix.go:738
+internal/poll.(*FD).Read(0xc000014360, {0xc00013c013, 0xfed, 0xfed})
+	/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.25.7.linux-amd64/src/internal/poll/fd_unix.go:161 +0x2ae
+os.(*File).read(...)
+	/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.25.7.linux-amd64/src/os/file_posix.go:29
+os.(*File).Read(0xc000044078, {0xc00013c013?, 0x7f119e78ea70?, 0x430840?})
+	/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.25.7.linux-amd64/src/os/file.go:144 +0x4f
+bufio.(*Reader).fill(0xc000014420)
+	/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.25.7.linux-amd64/src/bufio/bufio.go:113 +0x103
+bufio.(*Reader).ReadSlice(0xc000014420, 0xa)
+	/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.25.7.linux-amd64/src/bufio/bufio.go:380 +0x29
+bufio.(*Reader).collectFragments(0xc000014420, 0xa)
+	/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.25.7.linux-amd64/src/bufio/bufio.go:455 +0x70
+bufio.(*Reader).ReadBytes(0xc00007c8d0?, 0x58?)
+	/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.25.7.linux-amd64/src/bufio/bufio.go:482 +0x17
+github.com/LeeroyDing/hyperagent/internal/executor.(*ShellSession).readUntilPrompt(0xc00007c8d0)
+	/root/workspaces/hyperagent/internal/executor/session.go:69 +0x7d
+github.com/LeeroyDing/hyperagent/internal/executor.NewShellSession({0x5f77a1, 0xc})
+	/root/workspaces/hyperagent/internal/executor/session.go:42 +0x2d1
+github.com/LeeroyDing/hyperagent/internal/executor.(*SessionManager).GetOrCreate(0xc00002e1a0, {0x5f77a1, 0xc})
+	/root/workspaces/hyperagent/internal/executor/session.go:121 +0xec
+github.com/LeeroyDing/hyperagent/internal/executor.(*ShellExecutor).Execute(0xc00002e1c0, {0x5f77a1, 0xc}, {0x5f6e95, 0xa})
+	/root/workspaces/hyperagent/internal/executor/executor.go:48 +0x1fa
+github.com/LeeroyDing/hyperagent/internal/executor.TestShellExecutor_Execute.func1(0xc000003dc0)
+	/root/workspaces/hyperagent/internal/executor/executor_test.go:40 +0x39
+testing.tRunner(0xc000003dc0, 0xc000122140)
+	/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.25.7.linux-amd64/src/testing/testing.go:1934 +0xea
+created by testing.(*T).Run in goroutine 7
+	/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.25.7.linux-amd64/src/testing/testing.go:1997 +0x465
+FAIL	github.com/LeeroyDing/hyperagent/internal/executor	600.103s
+FAIL

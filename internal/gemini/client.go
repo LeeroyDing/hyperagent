@@ -26,6 +26,14 @@ Name    string
 Content string
 }
 
+// GeminiClient defines the interface for interacting with the Gemini API.
+type GeminiClient interface {
+GenerateContent(ctx context.Context, messages []Message, tools []*genai.Tool) (string, []ToolCall, error)
+SendToolResponse(ctx context.Context, messages []Message, tools []*genai.Tool, toolResponses []ToolResponse) (string, []ToolCall, error)
+EmbedContent(ctx context.Context, text string) ([]float32, error)
+Close() error
+}
+
 type Client struct {
 client *genai.Client
 model  *genai.GenerativeModel

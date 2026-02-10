@@ -1,0 +1,5 @@
+=== RUN   TestParseLLMResponse
+--- PASS: TestParseLLMResponse (0.00s)
+PASS
+coverage: 84.6% of statements
+ok  	github.com/LeeroyDing/hyperagent/internal/parser	0.003s	coverage: 84.6% of statements

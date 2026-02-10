@@ -1,0 +1,14 @@
+=== RUN   TestWebRoutes
+=== RUN   TestWebRoutes/ServeUI
+[GIN] 2026/02/09 - 12:59:37 | 200 |    1.920509ms |                 | GET      "/ui/"
+=== RUN   TestWebRoutes/RedirectRoot
+[GIN] 2026/02/09 - 12:59:37 | 301 |       16.36µs |                 | GET      "/"
+=== RUN   TestWebRoutes/APISessions
+[GIN] 2026/02/09 - 12:59:37 | 200 |     112.481µs |                 | GET      "/api/sessions"
+--- PASS: TestWebRoutes (0.00s)
+    --- PASS: TestWebRoutes/ServeUI (0.00s)
+    --- PASS: TestWebRoutes/RedirectRoot (0.00s)
+    --- PASS: TestWebRoutes/APISessions (0.00s)
+PASS
+coverage: 33.9% of statements
+ok  	github.com/LeeroyDing/hyperagent/internal/web	0.009s	coverage: 33.9% of statements

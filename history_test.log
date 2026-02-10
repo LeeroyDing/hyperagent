@@ -1,0 +1,10 @@
+=== RUN   TestHistoryManager
+--- PASS: TestHistoryManager (0.00s)
+PASS
+coverage: 33.8% of statements
+ok  	github.com/LeeroyDing/hyperagent/internal/history	0.003s	coverage: 33.8% of statements
+=== RUN   TestHistoryManager
+--- PASS: TestHistoryManager (0.00s)
+PASS
+coverage: 33.8% of statements
+ok  	github.com/LeeroyDing/hyperagent/internal/history	0.003s	coverage: 33.8% of statements

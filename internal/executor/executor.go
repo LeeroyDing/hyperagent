@@ -6,6 +6,10 @@ import (
 "strings"
 )
 
+type Executor interface {
+	Execute(sessionID, command string) (string, error)
+}
+
 type ShellExecutor struct {
 Allowlist []string
 Manager   *SessionManager

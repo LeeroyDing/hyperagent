@@ -1,0 +1,23 @@
+mode: set
+github.com/LeeroyDing/hyperagent/internal/memory/memory.go:35.92,36.15 1 1
+github.com/LeeroyDing/hyperagent/internal/memory/memory.go:36.15,39.2 2 1
+github.com/LeeroyDing/hyperagent/internal/memory/memory.go:40.1,40.47 1 1
+github.com/LeeroyDing/hyperagent/internal/memory/memory.go:40.47,42.2 1 1
+github.com/LeeroyDing/hyperagent/internal/memory/memory.go:45.1,46.15 2 1
+github.com/LeeroyDing/hyperagent/internal/memory/memory.go:46.15,48.2 1 0
+github.com/LeeroyDing/hyperagent/internal/memory/memory.go:49.1,50.15 2 1
+github.com/LeeroyDing/hyperagent/internal/memory/memory.go:50.15,52.2 1 0
+github.com/LeeroyDing/hyperagent/internal/memory/memory.go:54.1,58.7 1 1
+github.com/LeeroyDing/hyperagent/internal/memory/memory.go:61.108,63.15 2 1
+github.com/LeeroyDing/hyperagent/internal/memory/memory.go:63.15,65.2 1 1
+github.com/LeeroyDing/hyperagent/internal/memory/memory.go:67.1,75.15 3 1
+github.com/LeeroyDing/hyperagent/internal/memory/memory.go:75.15,77.2 1 0
+github.com/LeeroyDing/hyperagent/internal/memory/memory.go:79.1,79.11 1 1
+github.com/LeeroyDing/hyperagent/internal/memory/memory.go:82.103,84.15 2 1
+github.com/LeeroyDing/hyperagent/internal/memory/memory.go:84.15,86.2 1 1
+github.com/LeeroyDing/hyperagent/internal/memory/memory.go:88.1,89.15 2 1
+github.com/LeeroyDing/hyperagent/internal/memory/memory.go:89.15,91.2 1 1
+github.com/LeeroyDing/hyperagent/internal/memory/memory.go:93.1,93.20 1 1
+github.com/LeeroyDing/hyperagent/internal/memory/memory.go:96.69,98.2 1 1
+github.com/LeeroyDing/hyperagent/internal/memory/memory.go:100.103,102.2 1 1
+github.com/LeeroyDing/hyperagent/internal/memory/memory.go:104.78,106.2 1 1

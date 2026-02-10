@@ -1,0 +1,5 @@
+=== RUN   TestMemory
+--- PASS: TestMemory (0.00s)
+PASS
+coverage: 66.7% of statements
+ok  	github.com/LeeroyDing/hyperagent/internal/memory	0.005s	coverage: 66.7% of statements

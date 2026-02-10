@@ -1,0 +1,20 @@
+=== RUN   TestNewAgent
+--- PASS: TestNewAgent (0.00s)
+=== RUN   TestAgent_Run
+2026/02/09 14:54:47 INFO Starting agentic loop session=test-session prompt=Hello
+--- PASS: TestAgent_Run (0.00s)
+=== RUN   TestAgent_HandleToolCall_ExecuteCommand
+--- PASS: TestAgent_HandleToolCall_ExecuteCommand (0.00s)
+=== RUN   TestAgent_HandleToolCall_MemorySave
+--- PASS: TestAgent_HandleToolCall_MemorySave (0.00s)
+=== RUN   TestAgent_HandleToolCall_MemoryLoad
+--- PASS: TestAgent_HandleToolCall_MemoryLoad (0.00s)
+=== RUN   TestAgent_HandleToolCall_MemoryForget
+--- PASS: TestAgent_HandleToolCall_MemoryForget (0.00s)
+=== RUN   TestDistill
+2026/02/09 14:54:47 INFO Starting memory distillation session=test-session
+2026/02/09 14:54:47 INFO Memory distillation complete session=test-session
+--- PASS: TestDistill (0.00s)
+PASS
+coverage: 52.3% of statements
+ok  	github.com/LeeroyDing/hyperagent/internal/agent	0.011s	coverage: 52.3% of statements

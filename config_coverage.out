@@ -1,0 +1,22 @@
+mode: set
+github.com/LeeroyDing/hyperagent/internal/config/config.go:19.36,22.2 2 1
+github.com/LeeroyDing/hyperagent/internal/config/config.go:24.47,25.15 1 1
+github.com/LeeroyDing/hyperagent/internal/config/config.go:25.15,27.2 1 1
+github.com/LeeroyDing/hyperagent/internal/config/config.go:29.1,30.15 2 1
+github.com/LeeroyDing/hyperagent/internal/config/config.go:30.15,32.2 1 1
+github.com/LeeroyDing/hyperagent/internal/config/config.go:33.1,38.15 5 1
+github.com/LeeroyDing/hyperagent/internal/config/config.go:38.15,40.2 1 1
+github.com/LeeroyDing/hyperagent/internal/config/config.go:42.1,42.20 1 1
+github.com/LeeroyDing/hyperagent/internal/config/config.go:42.20,44.2 1 1
+github.com/LeeroyDing/hyperagent/internal/config/config.go:46.1,46.17 1 1
+github.com/LeeroyDing/hyperagent/internal/config/setup.go:13.33,30.16 12 1
+github.com/LeeroyDing/hyperagent/internal/config/setup.go:30.16,32.2 1 1
+github.com/LeeroyDing/hyperagent/internal/config/setup.go:35.1,39.26 5 1
+github.com/LeeroyDing/hyperagent/internal/config/setup.go:39.26,41.2 1 1
+github.com/LeeroyDing/hyperagent/internal/config/setup.go:43.1,51.61 3 1
+github.com/LeeroyDing/hyperagent/internal/config/setup.go:51.61,53.2 1 0
+github.com/LeeroyDing/hyperagent/internal/config/setup.go:55.1,56.15 2 1
+github.com/LeeroyDing/hyperagent/internal/config/setup.go:56.15,58.2 1 0
+github.com/LeeroyDing/hyperagent/internal/config/setup.go:59.1,62.43 3 1
+github.com/LeeroyDing/hyperagent/internal/config/setup.go:62.43,64.2 1 0
+github.com/LeeroyDing/hyperagent/internal/config/setup.go:66.1,70.16 4 1

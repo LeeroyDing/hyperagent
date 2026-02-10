@@ -1,0 +1,5 @@
+=== RUN   TestLoadConfig
+--- PASS: TestLoadConfig (0.00s)
+PASS
+coverage: 22.0% of statements
+ok  	github.com/LeeroyDing/hyperagent/internal/config	0.010s	coverage: 22.0% of statements

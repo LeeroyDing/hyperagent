@@ -18,25 +18,21 @@ import (
 )
 
 // GeminiClient defines the interface for interacting with Gemini
-type GeminiClient interface {
-GenerateContent(ctx context.Context, messages []gemini.Message, tools []*genai.Tool) (string, []gemini.ToolCall, error)
-SendToolResponse(ctx context.Context, messages []gemini.Message, tools []*genai.Tool, toolResponses []gemini.ToolResponse) (string, []gemini.ToolCall, error)
-}
 
 type Agent struct {
 InteractiveMode bool
 DryRun          bool
-Gemini          GeminiClient
-Executor        *executor.ShellExecutor
-Memory          *memory.Memory
+Gemini          gemini.GeminiClient
+Executor        executor.Executor
+Memory          memory.Memory
 MCP             *mcp.MCPManager
-History         *history.HistoryManager
+History         history.History
 TokenMgr        *token.TokenManager
 Editor          *editor.FileEditor
 Orchestrator    *orchestrator.Orchestrator
 }
 
-func NewAgent(gemini GeminiClient, executor *executor.ShellExecutor, memory *memory.Memory, mcpMgr *mcp.MCPManager, historyMgr *history.HistoryManager, interactiveMode bool) *Agent {
+func NewAgent(gemini gemini.GeminiClient, executor executor.Executor, memory memory.Memory, mcpMgr *mcp.MCPManager, historyMgr history.History, interactiveMode bool) *Agent {
 return &Agent{
 Gemini:          gemini,
 Executor:        executor,

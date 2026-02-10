@@ -1,0 +1,7 @@
+=== RUN   TestE2E_AgentLoop
+2026/02/09 12:41:55 INFO Starting agentic loop session=test-session prompt="Say hello"
+2026/02/09 12:41:55 INFO Handling tool call name=execute_command args="map[command:echo 'hello']"
+--- PASS: TestE2E_AgentLoop (0.00s)
+PASS
+coverage: 31.5% of statements in ./internal/agent
+ok  	github.com/LeeroyDing/hyperagent/internal/integration	(cached)	coverage: 31.5% of statements in ./internal/agent

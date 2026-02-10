@@ -1,0 +1,60 @@
+=== RUN   TestNewAgent
+--- PASS: TestNewAgent (0.00s)
+=== RUN   TestAgent_GetTools
+--- PASS: TestAgent_GetTools (0.00s)
+=== RUN   TestAgent_Run_Simple
+2026/02/09 15:21:18 INFO Starting agentic loop session=test-session prompt=Hello
+--- PASS: TestAgent_Run_Simple (0.00s)
+=== RUN   TestAgent_Run_WithRAG
+2026/02/09 15:21:18 INFO Starting agentic loop session=test-session prompt="What do I like?"
+2026/02/09 15:21:18 INFO RAG context injected count=1
+--- PASS: TestAgent_Run_WithRAG (0.00s)
+=== RUN   TestAgent_Run_WithToolCalls
+2026/02/09 15:21:18 INFO Starting agentic loop session=test-session prompt="List files"
+2026/02/09 15:21:18 INFO Handling tool call name=execute_command args=map[command:ls]
+--- PASS: TestAgent_Run_WithToolCalls (0.00s)
+=== RUN   TestAgent_Run_Errors
+=== RUN   TestAgent_Run_Errors/HistoryLoadError
+2026/02/09 15:21:18 INFO Starting agentic loop session=session prompt=hi
+=== RUN   TestAgent_Run_Errors/GeminiError
+2026/02/09 15:21:18 INFO Starting agentic loop session=session prompt=hi
+=== RUN   TestAgent_Run_Errors/ToolResponseError
+2026/02/09 15:21:18 INFO Starting agentic loop session=session prompt=hi
+2026/02/09 15:21:18 INFO Handling tool call name=execute_command args=map[command:ls]
+--- PASS: TestAgent_Run_Errors (0.00s)
+    --- PASS: TestAgent_Run_Errors/HistoryLoadError (0.00s)
+    --- PASS: TestAgent_Run_Errors/GeminiError (0.00s)
+    --- PASS: TestAgent_Run_Errors/ToolResponseError (0.00s)
+=== RUN   TestAgent_HandleToolCall
+=== RUN   TestAgent_HandleToolCall/ExecuteCommand_Cancelled
+
+[INTERACTIVE MODE] Confirm action: Execute command: ls (y/n): === RUN   TestAgent_HandleToolCall/ReadFile_Error
+=== RUN   TestAgent_HandleToolCall/ReplaceText_Cancelled
+
+[INTERACTIVE MODE] Confirm action: Replace text in f (y/n): === RUN   TestAgent_HandleToolCall/MemorySave_Error
+=== RUN   TestAgent_HandleToolCall/MemoryLoad_Error
+=== RUN   TestAgent_HandleToolCall/MemoryForget_Error
+=== RUN   TestAgent_HandleToolCall/UnknownTool
+--- PASS: TestAgent_HandleToolCall (0.00s)
+    --- PASS: TestAgent_HandleToolCall/ExecuteCommand_Cancelled (0.00s)
+    --- PASS: TestAgent_HandleToolCall/ReadFile_Error (0.00s)
+    --- PASS: TestAgent_HandleToolCall/ReplaceText_Cancelled (0.00s)
+    --- PASS: TestAgent_HandleToolCall/MemorySave_Error (0.00s)
+    --- PASS: TestAgent_HandleToolCall/MemoryLoad_Error (0.00s)
+    --- PASS: TestAgent_HandleToolCall/MemoryForget_Error (0.00s)
+    --- PASS: TestAgent_HandleToolCall/UnknownTool (0.00s)
+=== RUN   TestAgent_ConfirmAction_Interactive
+=== RUN   TestAgent_ConfirmAction_Interactive/Confirm_Y
+
+[INTERACTIVE MODE] Confirm action: test (y/n): === RUN   TestAgent_ConfirmAction_Interactive/Confirm_N
+
+[INTERACTIVE MODE] Confirm action: test (y/n): --- PASS: TestAgent_ConfirmAction_Interactive (0.00s)
+    --- PASS: TestAgent_ConfirmAction_Interactive/Confirm_Y (0.00s)
+    --- PASS: TestAgent_ConfirmAction_Interactive/Confirm_N (0.00s)
+=== RUN   TestDistill
+2026/02/09 15:21:18 INFO Starting memory distillation session=test-session
+2026/02/09 15:21:18 INFO Memory distillation complete session=test-session
+--- PASS: TestDistill (0.00s)
+PASS
+coverage: 82.9% of statements
+ok  	github.com/LeeroyDing/hyperagent/internal/agent	0.007s	coverage: 82.9% of statements

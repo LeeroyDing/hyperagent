@@ -11,12 +11,14 @@ import (
 "github.com/google/uuid"
 )
 
+// Message represents a single chat message.
 type Message struct {
 Role    string    `json:"role"` // "user", "assistant", "system", "tool"
 Content string    `json:"content"`
 Time    time.Time `json:"time"`
 }
 
+// Session represents a chat session metadata.
 type Session struct {
 ID        string    `json:"id"`
 Name      string    `json:"name"`
@@ -24,34 +26,47 @@ UpdatedAt time.Time `json:"updated_at"`
 Messages  []Message `json:"messages,omitempty"`
 }
 
-type HistoryManager struct {
+// History defines the interface for chat history operations.
+type History interface {
+CreateSession(name string) (string, error)
+AddMessage(sessionID, role, content string) error
+LoadHistory(sessionID string) ([]Message, error)
+ListSessions() ([]Session, error)
+SetSessionName(sessionID, name string) error
+GetSessionName(sessionID string) string
+}
+
+// FileHistory implements the History interface using local files.
+type FileHistory struct {
 StorageDir string
 }
 
+// GetDefaultHistoryDir returns the default directory for storing history.
 func GetDefaultHistoryDir() string {
 home, _ := os.UserHomeDir()
 return filepath.Join(home, ".hyperagent", "history")
 }
 
-func NewHistoryManager(storageDir string) (*HistoryManager, error) {
+// NewHistoryManager creates a new FileHistory instance.
+func NewHistoryManager(storageDir string) (*FileHistory, error) {
 if storageDir == "" {
 storageDir = GetDefaultHistoryDir()
 }
 if err := os.MkdirAll(storageDir, 0755); err != nil {
 return nil, fmt.Errorf("failed to create storage directory: %w", err)
 }
-return &HistoryManager{StorageDir: storageDir}, nil
+return &FileHistory{StorageDir: storageDir}, nil
 }
 
-func (h *HistoryManager) GetSessionPath(sessionID string) string {
+func (h *FileHistory) GetSessionPath(sessionID string) string {
 return filepath.Join(h.StorageDir, sessionID+".jsonl")
 }
 
-func (h *HistoryManager) GetMetadataPath(sessionID string) string {
+func (h *FileHistory) GetMetadataPath(sessionID string) string {
 return filepath.Join(h.StorageDir, sessionID+".meta.json")
 }
 
-func (h *HistoryManager) CreateSession(name string) (string, error) {
+func (h *FileHistory) CreateSession(name string) (string, error) {
 id := uuid.New().String()
 if name == "" {
 name = "New Conversation"
@@ -67,7 +82,7 @@ return "", err
 return id, nil
 }
 
-func (h *HistoryManager) AddMessage(sessionID, role, content string) error {
+func (h *FileHistory) AddMessage(sessionID, role, content string) error {
 msg := Message{
 Role:    role,
 Content: content,
@@ -93,7 +108,7 @@ return fmt.Errorf("failed to write to history file: %w", err)
 return nil
 }
 
-func (h *HistoryManager) SetSessionName(sessionID, name string) error {
+func (h *FileHistory) SetSessionName(sessionID, name string) error {
 path := h.GetMetadataPath(sessionID)
 meta := map[string]string{"name": name}
 data, err := json.Marshal(meta)
@@ -103,7 +118,7 @@ return err
 return os.WriteFile(path, data, 0644)
 }
 
-func (h *HistoryManager) GetSessionName(sessionID string) string {
+func (h *FileHistory) GetSessionName(sessionID string) string {
 path := h.GetMetadataPath(sessionID)
 data, err := os.ReadFile(path)
 if err != nil {
@@ -116,7 +131,7 @@ return "New Conversation"
 return meta["name"]
 }
 
-func (h *HistoryManager) LoadHistory(sessionID string) ([]Message, error) {
+func (h *FileHistory) LoadHistory(sessionID string) ([]Message, error) {
 path := h.GetSessionPath(sessionID)
 if _, err := os.Stat(path); os.IsNotExist(err) {
 return []Message{}, nil
@@ -141,7 +156,7 @@ messages = append(messages, msg)
 return messages, nil
 }
 
-func (h *HistoryManager) ListSessions() ([]Session, error) {
+func (h *FileHistory) ListSessions() ([]Session, error) {
 files, err := os.ReadDir(h.StorageDir)
 if err != nil {
 return nil, fmt.Errorf("failed to read storage directory: %w", err)

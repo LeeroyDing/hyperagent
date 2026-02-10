@@ -1,0 +1,19 @@
+mode: set
+github.com/LeeroyDing/hyperagent/internal/editor/editor.go:14.34,16.2 1 1
+github.com/LeeroyDing/hyperagent/internal/editor/editor.go:19.79,21.15 2 1
+github.com/LeeroyDing/hyperagent/internal/editor/editor.go:21.15,23.2 1 1
+github.com/LeeroyDing/hyperagent/internal/editor/editor.go:24.1,29.20 5 1
+github.com/LeeroyDing/hyperagent/internal/editor/editor.go:29.20,31.53 2 1
+github.com/LeeroyDing/hyperagent/internal/editor/editor.go:31.53,33.2 1 1
+github.com/LeeroyDing/hyperagent/internal/editor/editor.go:34.1,34.30 1 1
+github.com/LeeroyDing/hyperagent/internal/editor/editor.go:34.30,35.6 1 1
+github.com/LeeroyDing/hyperagent/internal/editor/editor.go:39.1,39.37 1 1
+github.com/LeeroyDing/hyperagent/internal/editor/editor.go:39.37,41.2 1 0
+github.com/LeeroyDing/hyperagent/internal/editor/editor.go:43.1,43.18 1 1
+github.com/LeeroyDing/hyperagent/internal/editor/editor.go:48.74,50.15 2 1
+github.com/LeeroyDing/hyperagent/internal/editor/editor.go:50.15,52.2 1 1
+github.com/LeeroyDing/hyperagent/internal/editor/editor.go:54.1,56.15 3 1
+github.com/LeeroyDing/hyperagent/internal/editor/editor.go:56.15,58.2 1 1
+github.com/LeeroyDing/hyperagent/internal/editor/editor.go:59.1,59.14 1 1
+github.com/LeeroyDing/hyperagent/internal/editor/editor.go:59.14,61.2 1 1
+github.com/LeeroyDing/hyperagent/internal/editor/editor.go:63.1,64.52 2 1

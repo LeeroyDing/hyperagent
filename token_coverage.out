@@ -1,0 +1,10 @@
+mode: set
+github.com/LeeroyDing/hyperagent/internal/token/token.go:14.59,18.15 2 1
+github.com/LeeroyDing/hyperagent/internal/token/token.go:18.15,20.2 1 0
+github.com/LeeroyDing/hyperagent/internal/token/token.go:21.1,21.41 1 1
+github.com/LeeroyDing/hyperagent/internal/token/token.go:25.54,28.2 2 1
+github.com/LeeroyDing/hyperagent/internal/token/token.go:32.81,35.41 3 1
+github.com/LeeroyDing/hyperagent/internal/token/token.go:35.41,37.35 2 1
+github.com/LeeroyDing/hyperagent/internal/token/token.go:37.35,38.6 1 1
+github.com/LeeroyDing/hyperagent/internal/token/token.go:40.1,41.50 2 1
+github.com/LeeroyDing/hyperagent/internal/token/token.go:43.1,43.14 1 1

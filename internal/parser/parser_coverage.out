@@ -1,0 +1,8 @@
+mode: set
+github.com/LeeroyDing/hyperagent/internal/parser/parser.go:21.56,27.21 4 1
+github.com/LeeroyDing/hyperagent/internal/parser/parser.go:27.21,29.2 1 1
+github.com/LeeroyDing/hyperagent/internal/parser/parser.go:31.1,34.26 2 1
+github.com/LeeroyDing/hyperagent/internal/parser/parser.go:34.26,36.2 1 1
+github.com/LeeroyDing/hyperagent/internal/parser/parser.go:38.1,40.15 3 1
+github.com/LeeroyDing/hyperagent/internal/parser/parser.go:40.15,42.2 1 1
+github.com/LeeroyDing/hyperagent/internal/parser/parser.go:44.1,44.18 1 1

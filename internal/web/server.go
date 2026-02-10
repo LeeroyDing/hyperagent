@@ -17,12 +17,12 @@ var staticAssets embed.FS
 
 type Server struct {
 Agent   *agent.Agent
-History *history.HistoryManager
-Memory  *memory.Memory
+History history.History
+Memory  memory.Memory
 router  *gin.Engine
 }
 
-func NewServer(a *agent.Agent, h *history.HistoryManager, m *memory.Memory) *Server {
+func NewServer(a *agent.Agent, h history.History, m memory.Memory) *Server {
 gin.SetMode(gin.ReleaseMode)
 r := gin.Default()
 

@@ -15,13 +15,24 @@ type Embedder interface {
 EmbedContent(ctx context.Context, text string) ([]float32, error)
 }
 
-type Memory struct {
+// Memory defines the interface for long-term memory operations.
+type Memory interface {
+Memorize(ctx context.Context, id, content string, metadata map[string]string) error
+Recall(ctx context.Context, query string, limit int) ([]chromem.Result, error)
+Forget(ctx context.Context, id string) error
+Search(ctx context.Context, query string, limit int) ([]chromem.Result, error)
+List(ctx context.Context) ([]chromem.Document, error)
+}
+
+// VectorMemory implements the Memory interface using a vector database.
+type VectorMemory struct {
 db         *chromem.DB
 collection *chromem.Collection
 embedder   Embedder
 }
 
-func NewMemory(ctx context.Context, embedder Embedder, path string) (*Memory, error) {
+// NewMemory creates a new VectorMemory instance.
+func NewMemory(ctx context.Context, embedder Embedder, path string) (*VectorMemory, error) {
 if path == "" {
 home, _ := os.UserHomeDir()
 path = filepath.Join(home, ".hyperagent", "memory")
@@ -40,14 +51,14 @@ if err != nil {
 return nil, fmt.Errorf("failed to get or create collection: %w", err)
 }
 
-return &Memory{
+return &VectorMemory{
 db:         db,
 collection: collection,
 embedder:   embedder,
 }, nil
 }
 
-func (m *Memory) Memorize(ctx context.Context, id, content string, metadata map[string]string) error {
+func (m *VectorMemory) Memorize(ctx context.Context, id, content string, metadata map[string]string) error {
 embedding, err := m.embedder.EmbedContent(ctx, content)
 if err != nil {
 return fmt.Errorf("failed to generate embedding: %w", err)
@@ -68,7 +79,7 @@ return fmt.Errorf("failed to add document: %w", err)
 return nil
 }
 
-func (m *Memory) Recall(ctx context.Context, query string, limit int) ([]chromem.Result, error) {
+func (m *VectorMemory) Recall(ctx context.Context, query string, limit int) ([]chromem.Result, error) {
 embedding, err := m.embedder.EmbedContent(ctx, query)
 if err != nil {
 return nil, fmt.Errorf("failed to generate embedding for query: %w", err)
@@ -82,14 +93,14 @@ return nil, fmt.Errorf("failed to query collection: %w", err)
 return results, nil
 }
 
-func (m *Memory) Forget(ctx context.Context, id string) error {
+func (m *VectorMemory) Forget(ctx context.Context, id string) error {
 return m.collection.Delete(ctx, nil, nil, id)
 }
 
-func (m *Memory) Search(ctx context.Context, query string, limit int) ([]chromem.Result, error) {
+func (m *VectorMemory) Search(ctx context.Context, query string, limit int) ([]chromem.Result, error) {
 return m.Recall(ctx, query, limit)
 }
 
-func (m *Memory) List(ctx context.Context) ([]chromem.Document, error) {
-return nil, nil
+func (m *VectorMemory) List(ctx context.Context) ([]chromem.Document, error) {
+return nil, nil // Not implemented yet
 }
