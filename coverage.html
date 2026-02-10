@@ -1,0 +1,1146 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>agent: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/LeeroyDing/hyperagent/internal/agent/agent.go (93.5%)</option>
+				
+				<option value="file1">github.com/LeeroyDing/hyperagent/internal/agent/distill.go (100.0%)</option>
+				
+				<option value="file2">github.com/LeeroyDing/hyperagent/internal/config/config.go (100.0%)</option>
+				
+				<option value="file3">github.com/LeeroyDing/hyperagent/internal/config/setup.go (91.2%)</option>
+				
+				<option value="file4">github.com/LeeroyDing/hyperagent/internal/editor/editor.go (96.4%)</option>
+				
+				<option value="file5">github.com/LeeroyDing/hyperagent/internal/executor/executor.go (100.0%)</option>
+				
+				<option value="file6">github.com/LeeroyDing/hyperagent/internal/executor/session.go (91.1%)</option>
+				
+				<option value="file7">github.com/LeeroyDing/hyperagent/internal/memory/memory.go (90.0%)</option>
+				
+				<option value="file8">github.com/LeeroyDing/hyperagent/internal/orchestrator/orchestrator.go (100.0%)</option>
+				
+				<option value="file9">github.com/LeeroyDing/hyperagent/internal/parser/parser.go (100.0%)</option>
+				
+				<option value="file10">github.com/LeeroyDing/hyperagent/internal/token/token.go (93.3%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package agent
+
+import (
+"context"
+"fmt"
+"log/slog"
+"strings"
+
+"github.com/LeeroyDing/hyperagent/internal/editor"
+"github.com/LeeroyDing/hyperagent/internal/executor"
+"github.com/LeeroyDing/hyperagent/internal/gemini"
+"github.com/LeeroyDing/hyperagent/internal/history"
+"github.com/LeeroyDing/hyperagent/internal/mcp"
+"github.com/LeeroyDing/hyperagent/internal/memory"
+"github.com/LeeroyDing/hyperagent/internal/orchestrator"
+"github.com/LeeroyDing/hyperagent/internal/token"
+"github.com/google/generative-ai-go/genai"
+)
+
+// GeminiClient defines the interface for interacting with Gemini
+
+type Agent struct {
+InteractiveMode bool
+DryRun          bool
+Gemini          gemini.GeminiClient
+Executor        executor.Executor
+Memory          memory.Memory
+MCP             *mcp.MCPManager
+History         history.History
+TokenMgr        *token.TokenManager
+Editor          *editor.FileEditor
+Orchestrator    *orchestrator.Orchestrator
+}
+
+func NewAgent(gemini gemini.GeminiClient, executor executor.Executor, memory memory.Memory, mcpMgr *mcp.MCPManager, historyMgr history.History, interactiveMode bool) *Agent <span class="cov8" title="1">{
+return &amp;Agent{
+Gemini:          gemini,
+Executor:        executor,
+Memory:          memory,
+MCP:             mcpMgr,
+History:         historyMgr,
+InteractiveMode: interactiveMode,
+Editor:          editor.NewFileEditor(),
+Orchestrator:    orchestrator.NewOrchestrator(),
+}
+}</span>
+
+func (a *Agent) getTools() []*genai.Tool <span class="cov8" title="1">{
+return []*genai.Tool{
+{
+FunctionDeclarations: []*genai.FunctionDeclaration{
+{
+Name:        "execute_command",
+Description: "Execute a shell command on the host system",
+Parameters: &amp;genai.Schema{
+Type: genai.TypeObject,
+Properties: map[string]*genai.Schema{
+"command": {Type: genai.TypeString, Description: "The shell command to execute"},
+},
+Required: []string{"command"},
+},
+},
+{
+Name:        "read_file",
+Description: "Read lines from a file",
+Parameters: &amp;genai.Schema{
+Type: genai.TypeObject,
+Properties: map[string]*genai.Schema{
+"path":  {Type: genai.TypeString, Description: "Path to the file"},
+"start": {Type: genai.TypeInteger, Description: "Start line (1-indexed)"},
+"end":   {Type: genai.TypeInteger, Description: "End line (optional)"},
+},
+Required: []string{"path"},
+},
+},
+{
+Name:        "replace_text",
+Description: "Replace text in a file",
+Parameters: &amp;genai.Schema{
+Type: genai.TypeObject,
+Properties: map[string]*genai.Schema{
+"path":     {Type: genai.TypeString, Description: "Path to the file"},
+"old_text": {Type: genai.TypeString, Description: "Text to find"},
+"new_text": {Type: genai.TypeString, Description: "Replacement text"},
+},
+Required: []string{"path", "old_text", "new_text"},
+},
+},
+{
+Name:        "memory_save",
+Description: "Save information to long-term memory",
+Parameters: &amp;genai.Schema{
+Type: genai.TypeObject,
+Properties: map[string]*genai.Schema{
+"id":      {Type: genai.TypeString, Description: "Unique ID for the memory"},
+"content": {Type: genai.TypeString, Description: "Content to memorize"},
+},
+Required: []string{"id", "content"},
+},
+},
+{
+Name:        "memory_load",
+Description: "Search long-term memory",
+Parameters: &amp;genai.Schema{
+Type: genai.TypeObject,
+Properties: map[string]*genai.Schema{
+"query": {Type: genai.TypeString, Description: "Search query"},
+"limit": {Type: genai.TypeInteger, Description: "Max results (default 5)"},
+},
+Required: []string{"query"},
+},
+},
+{
+Name:        "memory_forget",
+Description: "Delete information from long-term memory",
+Parameters: &amp;genai.Schema{
+Type: genai.TypeObject,
+Properties: map[string]*genai.Schema{
+"id": {Type: genai.TypeString, Description: "ID of the memory to delete"},
+},
+Required: []string{"id"},
+},
+},
+},
+},
+}
+}</span>
+
+func (a *Agent) Run(ctx context.Context, sessionID, prompt string) (string, error) <span class="cov8" title="1">{
+slog.Info("Starting agentic loop", "session", sessionID, "prompt", prompt)
+
+// 1. RAG Step: Recall relevant memories
+var ragContext string
+results, err := a.Memory.Recall(ctx, prompt, 5)
+if err == nil &amp;&amp; len(results) &gt; 0 </span><span class="cov8" title="1">{
+var sb strings.Builder
+sb.WriteString("\n[LONG-TERM MEMORY CONTEXT]\n")
+for _, r := range results </span><span class="cov8" title="1">{
+sb.WriteString(fmt.Sprintf("- %s\n", r.Content))
+}</span>
+<span class="cov8" title="1">ragContext = sb.String()
+slog.Info("RAG context injected", "count", len(results))</span>
+}
+
+<span class="cov8" title="1">hist, err := a.History.LoadHistory(sessionID)
+if err != nil </span><span class="cov8" title="1">{
+return "", fmt.Errorf("failed to load history: %w", err)
+}</span>
+
+<span class="cov8" title="1">var messages []gemini.Message
+for _, m := range hist </span><span class="cov0" title="0">{
+messages = append(messages, gemini.Message{Role: m.Role, Content: m.Content})
+}</span>
+
+// Inject RAG context into the current prompt if available
+<span class="cov8" title="1">finalPrompt := prompt
+if ragContext != "" </span><span class="cov8" title="1">{
+finalPrompt = fmt.Sprintf("%s\n\nUser Prompt: %s", ragContext, prompt)
+}</span>
+<span class="cov8" title="1">messages = append(messages, gemini.Message{Role: "user", Content: finalPrompt})
+
+// Save user message to history (original prompt)
+a.History.AddMessage(sessionID, "user", prompt)
+
+tools := a.getTools()
+textResp, toolCalls, err := a.Gemini.GenerateContent(ctx, messages, tools)
+if err != nil </span><span class="cov8" title="1">{
+return "", fmt.Errorf("gemini error: %w", err)
+}</span>
+
+<span class="cov8" title="1">for len(toolCalls) &gt; 0 </span><span class="cov8" title="1">{
+var toolResponses []gemini.ToolResponse
+for _, tc := range toolCalls </span><span class="cov8" title="1">{
+slog.Info("Handling tool call", "name", tc.Name, "args", tc.Arguments)
+result, err := a.handleToolCall(ctx, sessionID, tc)
+if err != nil </span><span class="cov0" title="0">{
+result = fmt.Sprintf("Error: %v", err)
+}</span>
+<span class="cov8" title="1">toolResponses = append(toolResponses, gemini.ToolResponse{
+Name:    tc.Name,
+Content: result,
+})</span>
+}
+
+<span class="cov8" title="1">textResp, toolCalls, err = a.Gemini.SendToolResponse(ctx, messages, tools, toolResponses)
+if err != nil </span><span class="cov8" title="1">{
+return "", fmt.Errorf("gemini tool response error: %w", err)
+}</span>
+}
+
+// Save assistant response to history
+<span class="cov8" title="1">if textResp != "" </span><span class="cov8" title="1">{
+a.History.AddMessage(sessionID, "model", textResp)
+}</span>
+
+<span class="cov8" title="1">return textResp, nil</span>
+}
+
+func (a *Agent) handleToolCall(ctx context.Context, sessionID string, tc gemini.ToolCall) (string, error) <span class="cov8" title="1">{
+switch tc.Name </span>{
+case "execute_command":<span class="cov8" title="1">
+cmd := tc.Arguments["command"].(string)
+if !a.confirmAction(fmt.Sprintf("Execute command: %s", cmd)) </span><span class="cov8" title="1">{
+return "Action cancelled by user", nil
+}</span>
+<span class="cov8" title="1">return a.Executor.Execute(sessionID, cmd)</span>
+case "read_file":<span class="cov8" title="1">
+path := tc.Arguments["path"].(string)
+start := int(tc.Arguments["start"].(float64))
+end := 0
+if e, ok := tc.Arguments["end"]; ok </span><span class="cov8" title="1">{
+end = int(e.(float64))
+}</span>
+<span class="cov8" title="1">lines, err := a.Editor.ReadLines(path, start, end)
+if err != nil </span><span class="cov8" title="1">{
+return "", err
+}</span>
+<span class="cov8" title="1">return strings.Join(lines, "\n"), nil</span>
+case "replace_text":<span class="cov8" title="1">
+path := tc.Arguments["path"].(string)
+old := tc.Arguments["old_text"].(string)
+new := tc.Arguments["new_text"].(string)
+if !a.confirmAction(fmt.Sprintf("Replace text in %s", path)) </span><span class="cov8" title="1">{
+return "Action cancelled by user", nil
+}</span>
+<span class="cov8" title="1">err := a.Editor.Replace(path, old, new)
+if err != nil </span><span class="cov0" title="0">{
+return "", err
+}</span>
+<span class="cov8" title="1">return "Text replaced successfully", nil</span>
+case "memory_save":<span class="cov8" title="1">
+id := tc.Arguments["id"].(string)
+content := tc.Arguments["content"].(string)
+err := a.Memory.Memorize(ctx, id, content, nil)
+if err != nil </span><span class="cov0" title="0">{
+return "", err
+}</span>
+<span class="cov8" title="1">return "Information memorized", nil</span>
+case "memory_load":<span class="cov8" title="1">
+query := tc.Arguments["query"].(string)
+limit := 5
+if l, ok := tc.Arguments["limit"]; ok </span><span class="cov8" title="1">{
+limit = int(l.(float64))
+}</span>
+<span class="cov8" title="1">results, err := a.Memory.Recall(ctx, query, limit)
+if err != nil </span><span class="cov0" title="0">{
+return "", err
+}</span>
+<span class="cov8" title="1">var sb strings.Builder
+for _, r := range results </span><span class="cov8" title="1">{
+sb.WriteString(fmt.Sprintf("ID: %s\nContent: %s\n\n", r.ID, r.Content))
+}</span>
+<span class="cov8" title="1">return sb.String(), nil</span>
+case "memory_forget":<span class="cov8" title="1">
+id := tc.Arguments["id"].(string)
+err := a.Memory.Forget(ctx, id)
+if err != nil </span><span class="cov0" title="0">{
+return "", err
+}</span>
+<span class="cov8" title="1">return "Memory forgotten", nil</span>
+default:<span class="cov8" title="1">
+return "", fmt.Errorf("unknown tool: %s", tc.Name)</span>
+}
+}
+
+func (a *Agent) confirmAction(action string) bool <span class="cov8" title="1">{
+if !a.InteractiveMode </span><span class="cov8" title="1">{
+return true
+}</span>
+<span class="cov8" title="1">fmt.Printf("\n[INTERACTIVE MODE] Confirm action: %s (y/n): ", action)
+var response string
+fmt.Scanln(&amp;response)
+return strings.ToLower(strings.TrimSpace(response)) == "y"</span>
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package agent
+
+import (
+"context"
+"fmt"
+"log/slog"
+
+"github.com/LeeroyDing/hyperagent/internal/gemini"
+)
+
+func (a *Agent) Distill(ctx context.Context, sessionID string) error <span class="cov8" title="1">{
+slog.Info("Starting memory distillation", "session", sessionID)
+
+hist, err := a.History.LoadHistory(sessionID)
+if err != nil </span><span class="cov8" title="1">{
+return fmt.Errorf("failed to load history for distillation: %w", err)
+}</span>
+
+<span class="cov8" title="1">if len(hist) &lt; 5 </span><span class="cov8" title="1">{
+return nil // Not enough context to distill
+}</span>
+
+// Prepare history for Gemini
+<span class="cov8" title="1">var historyText string
+for _, m := range hist </span><span class="cov8" title="1">{
+historyText += fmt.Sprintf("%s: %s\n", m.Role, m.Content)
+}</span>
+
+<span class="cov8" title="1">prompt := fmt.Sprintf("Summarize the following conversation into a concise set of key facts, decisions, and context for long-term memory. Focus on information that will be useful for future interactions. Conversation:\n%s", historyText)
+
+summary, _, err := a.Gemini.GenerateContent(ctx, []gemini.Message{
+{Role: "user", Content: prompt},
+}, nil)
+if err != nil </span><span class="cov8" title="1">{
+return fmt.Errorf("failed to generate distillation summary: %w", err)
+}</span>
+
+// Save to vector memory
+<span class="cov8" title="1">err = a.Memory.Memorize(ctx, fmt.Sprintf("distill-%s-%d", sessionID, len(hist)), summary, map[string]string{
+"session_id": sessionID,
+"type":       "distillation",
+})
+if err != nil </span><span class="cov8" title="1">{
+return fmt.Errorf("failed to save distillation to memory: %w", err)
+}</span>
+
+<span class="cov8" title="1">slog.Info("Memory distillation complete", "session", sessionID)
+return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package config
+
+import (
+"os"
+"path/filepath"
+
+"github.com/LeeroyDing/hyperagent/internal/mcp"
+"gopkg.in/yaml.v3"
+)
+
+type Config struct {
+Model            string             `yaml:"model"`
+MCPServers       []mcp.ServerConfig `yaml:"mcp_servers"`
+InteractiveMode  bool               `yaml:"interactive_mode"`
+CommandAllowlist []string           `yaml:"command_allowlist"`
+GeminiAPIKey     string             `yaml:"gemini_api_key"`
+}
+
+func GetDefaultConfigPath() string <span class="cov8" title="1">{
+home, _ := os.UserHomeDir()
+return filepath.Join(home, ".hyperagent", "config.yaml")
+}</span>
+
+func LoadConfig(path string) (*Config, error) <span class="cov8" title="1">{
+if path == "" </span><span class="cov8" title="1">{
+path = GetDefaultConfigPath()
+}</span>
+
+<span class="cov8" title="1">f, err := os.Open(path)
+if err != nil </span><span class="cov8" title="1">{
+return nil, err
+}</span>
+<span class="cov8" title="1">defer f.Close()
+
+var cfg Config
+decoder := yaml.NewDecoder(f)
+err = decoder.Decode(&amp;cfg)
+if err != nil </span><span class="cov8" title="1">{
+return nil, err
+}</span>
+
+<span class="cov8" title="1">if cfg.Model == "" </span><span class="cov8" title="1">{
+cfg.Model = "gemini-3-flash-preview"
+}</span>
+
+<span class="cov8" title="1">return &amp;cfg, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package config
+
+import (
+"bufio"
+"fmt"
+"os"
+"path/filepath"
+"strings"
+
+"gopkg.in/yaml.v3"
+)
+
+func RunOOBE() (*Config, error) <span class="cov8" title="1">{
+fmt.Println("🚀 Welcome to Hyperagent!")
+fmt.Println("It looks like you haven't configured Hyperagent yet.")
+fmt.Println("Let's get you set up in a few steps.")
+fmt.Println("")
+
+reader := bufio.NewReader(os.Stdin)
+
+// 1. Gemini API Key
+fmt.Print("🔑 Enter your Gemini API Key: ")
+apiKey, _ := reader.ReadString('\n')
+apiKey = strings.TrimSpace(apiKey)
+
+// 2. Model Selection
+fmt.Print("🤖 Enter default model [gemini-3-flash-preview]: ")
+model, _ := reader.ReadString('\n')
+model = strings.TrimSpace(model)
+if model == "" </span><span class="cov8" title="1">{
+model = "gemini-3-flash-preview"
+}</span>
+
+// 3. Interactive Mode
+<span class="cov8" title="1">fmt.Print("🛡️ Enable interactive safety mode by default? (y/n) [y]: ")
+interactiveStr, _ := reader.ReadString('\n')
+interactiveStr = strings.TrimSpace(strings.ToLower(interactiveStr))
+interactive := true
+if interactiveStr == "n" </span><span class="cov8" title="1">{
+interactive = false
+}</span>
+
+<span class="cov8" title="1">cfg := &amp;Config{
+GeminiAPIKey:    apiKey,
+Model:           model,
+InteractiveMode: interactive,
+CommandAllowlist: []string{"ls", "pwd", "cat", "grep", "find"},
+}
+
+path := GetDefaultConfigPath()
+if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil </span><span class="cov0" title="0">{
+return nil, fmt.Errorf("failed to create config directory: %w", err)
+}</span>
+
+<span class="cov8" title="1">f, err := os.Create(path)
+if err != nil </span><span class="cov0" title="0">{
+return nil, fmt.Errorf("failed to create config file: %w", err)
+}</span>
+<span class="cov8" title="1">defer f.Close()
+
+encoder := yaml.NewEncoder(f)
+if err := encoder.Encode(cfg); err != nil </span><span class="cov0" title="0">{
+return nil, fmt.Errorf("failed to save config: %w", err)
+}</span>
+
+<span class="cov8" title="1">fmt.Println("")
+fmt.Printf("✅ Configuration saved to %s\n", path)
+fmt.Println("You're all set! Starting Hyperagent...")
+
+return cfg, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package editor
+
+import (
+"bufio"
+"fmt"
+"os"
+"strings"
+)
+
+// FileEditor provides methods for safe file manipulation.
+type FileEditor struct{}
+
+// NewFileEditor creates a new FileEditor.
+func NewFileEditor() *FileEditor <span class="cov8" title="1">{
+return &amp;FileEditor{}
+}</span>
+
+// ReadLines reads specific lines from a file (1-indexed).
+func (e *FileEditor) ReadLines(path string, start, end int) ([]string, error) <span class="cov8" title="1">{
+file, err := os.Open(path)
+if err != nil </span><span class="cov8" title="1">{
+return nil, err
+}</span>
+<span class="cov8" title="1">defer file.Close()
+
+var lines []string
+scanner := bufio.NewScanner(file)
+lineNum := 0
+for scanner.Scan() </span><span class="cov8" title="1">{
+lineNum++
+if lineNum &gt;= start &amp;&amp; (end &lt;= 0 || lineNum &lt;= end) </span><span class="cov8" title="1">{
+lines = append(lines, scanner.Text())
+}</span>
+<span class="cov8" title="1">if end &gt; 0 &amp;&amp; lineNum &gt;= end </span><span class="cov8" title="1">{
+break</span>
+}
+}
+
+<span class="cov8" title="1">if err := scanner.Err(); err != nil </span><span class="cov0" title="0">{
+return nil, err
+}</span>
+
+<span class="cov8" title="1">return lines, nil</span>
+}
+
+// Replace replaces oldText with newText in the file.
+// It returns an error if oldText is not found or found multiple times (to be safe).
+func (e *FileEditor) Replace(path string, oldText, newText string) error <span class="cov8" title="1">{
+content, err := os.ReadFile(path)
+if err != nil </span><span class="cov8" title="1">{
+return err
+}</span>
+
+<span class="cov8" title="1">strContent := string(content)
+count := strings.Count(strContent, oldText)
+if count == 0 </span><span class="cov8" title="1">{
+return fmt.Errorf("old text not found in file")
+}</span>
+<span class="cov8" title="1">if count &gt; 1 </span><span class="cov8" title="1">{
+return fmt.Errorf("old text found multiple times (%d), please be more specific", count)
+}</span>
+
+<span class="cov8" title="1">newContent := strings.Replace(strContent, oldText, newText, 1)
+return os.WriteFile(path, []byte(newContent), 0644)</span>
+}
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">package executor
+
+import (
+"fmt"
+"log/slog"
+"strings"
+)
+
+type Executor interface {
+        Execute(sessionID, command string) (string, error)
+}
+
+type ShellExecutor struct {
+Allowlist []string
+Manager   *SessionManager
+}
+
+func NewShellExecutor(allowlist []string) *ShellExecutor <span class="cov8" title="1">{
+return &amp;ShellExecutor{
+Allowlist: allowlist,
+Manager:   NewSessionManager(),
+}
+}</span>
+
+func (e *ShellExecutor) Execute(sessionID, command string) (string, error) <span class="cov8" title="1">{
+cmdParts := strings.Fields(command)
+if len(cmdParts) == 0 </span><span class="cov8" title="1">{
+return "", fmt.Errorf("empty command")
+}</span>
+
+<span class="cov8" title="1">baseCmd := cmdParts[0]
+if len(e.Allowlist) &gt; 0 </span><span class="cov8" title="1">{
+allowed := false
+for _, a := range e.Allowlist </span><span class="cov8" title="1">{
+if baseCmd == a </span><span class="cov8" title="1">{
+allowed = true
+break</span>
+}
+}
+<span class="cov8" title="1">if !allowed </span><span class="cov8" title="1">{
+slog.Warn("Command blocked by allowlist", "command", baseCmd)
+return "", fmt.Errorf("command '%s' is not in the allowlist", baseCmd)
+}</span>
+}
+
+<span class="cov8" title="1">slog.Debug("Executing shell command in session", "session", sessionID, "command", command)
+
+session, err := e.Manager.GetOrCreate(sessionID)
+if err != nil </span><span class="cov8" title="1">{
+return "", fmt.Errorf("failed to get shell session: %v", err)
+}</span>
+
+<span class="cov8" title="1">return session.Execute(command)</span>
+}
+
+func (e *ShellExecutor) Cleanup() <span class="cov8" title="1">{
+e.Manager.Cleanup()
+}</span>
+</pre>
+		
+		<pre class="file" id="file6" style="display: none">package executor
+
+import (
+"bufio"
+"bytes"
+"context"
+"fmt"
+"os"
+"os/exec"
+"strings"
+"sync"
+"time"
+
+"github.com/creack/pty"
+"github.com/google/uuid"
+)
+
+// Shell defines the interface for a shell session
+type Shell interface {
+Execute(command string) (string, error)
+Close() error
+}
+
+// ShellSession represents a persistent PTY session
+type ShellSession struct {
+ID      string
+Cmd     *exec.Cmd
+Pty     *os.File
+outChan chan byte
+errChan chan error
+mu      sync.Mutex
+closed  bool
+stop    chan struct{}
+}
+
+// NewShellSession spawns a new persistent shell
+func NewShellSession(id string) (*ShellSession, error) <span class="cov8" title="1">{
+c := exec.Command("bash", "--noprofile", "--norc")
+
+f, err := pty.Start(c)
+if err != nil </span><span class="cov0" title="0">{
+return nil, err
+}</span>
+
+<span class="cov8" title="1">s := &amp;ShellSession{
+ID:      id,
+Cmd:     c,
+Pty:     f,
+outChan: make(chan byte, 8192),
+errChan: make(chan error, 1),
+stop:    make(chan struct{}),
+}
+
+go s.readLoop()
+
+// Disable echo immediately
+fmt.Fprintln(f, "stty -echo")
+
+// Initial sync to consume the 'stty -echo' output and any initial prompt
+ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+defer cancel()
+_, err = s.executeWithSentinel(ctx, "echo ready")
+if err != nil </span><span class="cov0" title="0">{
+s.Close()
+return nil, fmt.Errorf("init failed: %v", err)
+}</span>
+
+<span class="cov8" title="1">return s, nil</span>
+}
+
+func (s *ShellSession) readLoop() <span class="cov8" title="1">{
+reader := bufio.NewReader(s.Pty)
+for </span><span class="cov8" title="1">{
+b, err := reader.ReadByte()
+if err != nil </span><span class="cov8" title="1">{
+select </span>{
+case s.errChan &lt;- err:<span class="cov8" title="1"></span>
+case &lt;-s.stop:<span class="cov8" title="1"></span>
+}
+<span class="cov8" title="1">return</span>
+}
+<span class="cov8" title="1">select </span>{
+case s.outChan &lt;- b:<span class="cov8" title="1"></span>
+case &lt;-s.stop:<span class="cov8" title="1">
+return</span>
+}
+}
+}
+
+func (s *ShellSession) Execute(command string) (string, error) <span class="cov8" title="1">{
+s.mu.Lock()
+defer s.mu.Unlock()
+
+if s.closed </span><span class="cov8" title="1">{
+return "", fmt.Errorf("session closed")
+}</span>
+
+<span class="cov8" title="1">ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+defer cancel()
+
+return s.executeWithSentinel(ctx, command)</span>
+}
+
+func (s *ShellSession) executeWithSentinel(ctx context.Context, command string) (string, error) <span class="cov8" title="1">{
+// Drain outChan
+for len(s.outChan) &gt; 0 </span><span class="cov8" title="1">{ &lt;-s.outChan }</span>
+
+<span class="cov8" title="1">u := uuid.New().String()
+sentinel := "__SENTINEL_" + u + "__"
+
+// Send command and sentinel
+_, err := fmt.Fprintln(s.Pty, command + "; echo " + sentinel)
+if err != nil </span><span class="cov0" title="0">{
+return "", err
+}</span>
+
+<span class="cov8" title="1">var output bytes.Buffer
+for </span><span class="cov8" title="1">{
+select </span>{
+case b := &lt;-s.outChan:<span class="cov8" title="1">
+output.WriteByte(b)
+str := output.String()
+
+// Check if sentinel is present
+if idx := strings.Index(str, sentinel); idx != -1 </span><span class="cov8" title="1">{
+lastIdx := strings.LastIndex(str, sentinel)
+result := str[:lastIdx]
+lines := strings.Split(strings.ReplaceAll(result, "\r\n", "\n"), "\n")
+
+// Strip the command echo line if it matches
+if len(lines) &gt; 0 &amp;&amp; strings.Contains(lines[0], u) </span><span class="cov0" title="0">{
+lines = lines[1:]
+}</span>
+
+<span class="cov8" title="1">return strings.TrimSpace(strings.Join(lines, "\n")), nil</span>
+}
+case err := &lt;-s.errChan:<span class="cov0" title="0">
+return output.String(), err</span>
+case &lt;-ctx.Done():<span class="cov8" title="1">
+return output.String(), ctx.Err()</span>
+}
+}
+}
+
+func (s *ShellSession) Close() error <span class="cov8" title="1">{
+s.mu.Lock()
+defer s.mu.Unlock()
+if s.closed </span><span class="cov8" title="1">{
+return nil
+}</span>
+<span class="cov8" title="1">s.closed = true
+close(s.stop)
+s.Pty.Close()
+return s.Cmd.Process.Kill()</span>
+}
+
+// SessionManager manages multiple shell sessions
+type SessionManager struct {
+sessions map[string]Shell
+mu       sync.RWMutex
+Creator  func(id string) (Shell, error)
+}
+
+func NewSessionManager() *SessionManager <span class="cov8" title="1">{
+return &amp;SessionManager{
+sessions: make(map[string]Shell),
+Creator: func(id string) (Shell, error) </span><span class="cov8" title="1">{
+return NewShellSession(id)
+}</span>,
+}
+}
+
+func (m *SessionManager) GetOrCreate(id string) (Shell, error) <span class="cov8" title="1">{
+m.mu.RLock()
+s, ok := m.sessions[id]
+m.mu.RUnlock()
+if ok </span><span class="cov8" title="1">{ return s, nil }</span>
+
+<span class="cov8" title="1">m.mu.Lock()
+defer m.mu.Unlock()
+if s, ok := m.sessions[id]; ok </span><span class="cov0" title="0">{ return s, nil }</span>
+
+<span class="cov8" title="1">s, err := m.Creator(id)
+if err != nil </span><span class="cov8" title="1">{ return nil, err }</span>
+<span class="cov8" title="1">m.sessions[id] = s
+return s, nil</span>
+}
+
+func (m *SessionManager) Cleanup() <span class="cov8" title="1">{
+m.mu.Lock()
+defer m.mu.Unlock()
+for _, s := range m.sessions </span><span class="cov8" title="1">{ s.Close() }</span>
+<span class="cov8" title="1">m.sessions = make(map[string]Shell)</span>
+}
+</pre>
+		
+		<pre class="file" id="file7" style="display: none">package memory
+
+import (
+"context"
+"fmt"
+"os"
+"path/filepath"
+"runtime"
+
+"github.com/philippgille/chromem-go"
+)
+
+// Embedder defines the interface for generating embeddings.
+type Embedder interface {
+EmbedContent(ctx context.Context, text string) ([]float32, error)
+}
+
+// Memory defines the interface for long-term memory operations.
+type Memory interface {
+Memorize(ctx context.Context, id, content string, metadata map[string]string) error
+Recall(ctx context.Context, query string, limit int) ([]chromem.Result, error)
+Forget(ctx context.Context, id string) error
+Search(ctx context.Context, query string, limit int) ([]chromem.Result, error)
+List(ctx context.Context) ([]chromem.Document, error)
+}
+
+// VectorMemory implements the Memory interface using a vector database.
+type VectorMemory struct {
+db         *chromem.DB
+collection *chromem.Collection
+embedder   Embedder
+}
+
+// NewMemory creates a new VectorMemory instance.
+func NewMemory(ctx context.Context, embedder Embedder, path string) (*VectorMemory, error) <span class="cov8" title="1">{
+if path == "" </span><span class="cov8" title="1">{
+home, _ := os.UserHomeDir()
+path = filepath.Join(home, ".hyperagent", "memory")
+}</span>
+<span class="cov8" title="1">if err := os.MkdirAll(path, 0755); err != nil </span><span class="cov8" title="1">{
+return nil, fmt.Errorf("failed to create memory directory: %w", err)
+}</span>
+
+// Use persistent storage
+<span class="cov8" title="1">db, err := chromem.NewPersistentDB(path, false)
+if err != nil </span><span class="cov0" title="0">{
+return nil, fmt.Errorf("failed to create persistent db: %w", err)
+}</span>
+<span class="cov8" title="1">collection, err := db.GetOrCreateCollection("agent_memory", nil, nil)
+if err != nil </span><span class="cov0" title="0">{
+return nil, fmt.Errorf("failed to get or create collection: %w", err)
+}</span>
+
+<span class="cov8" title="1">return &amp;VectorMemory{
+db:         db,
+collection: collection,
+embedder:   embedder,
+}, nil</span>
+}
+
+func (m *VectorMemory) Memorize(ctx context.Context, id, content string, metadata map[string]string) error <span class="cov8" title="1">{
+embedding, err := m.embedder.EmbedContent(ctx, content)
+if err != nil </span><span class="cov8" title="1">{
+return fmt.Errorf("failed to generate embedding: %w", err)
+}</span>
+
+<span class="cov8" title="1">doc := chromem.Document{
+ID:        id,
+Content:   content,
+Metadata:  metadata,
+Embedding: embedding,
+}
+
+err = m.collection.AddDocuments(ctx, []chromem.Document{doc}, runtime.NumCPU())
+if err != nil </span><span class="cov0" title="0">{
+return fmt.Errorf("failed to add document: %w", err)
+}</span>
+
+<span class="cov8" title="1">return nil</span>
+}
+
+func (m *VectorMemory) Recall(ctx context.Context, query string, limit int) ([]chromem.Result, error) <span class="cov8" title="1">{
+embedding, err := m.embedder.EmbedContent(ctx, query)
+if err != nil </span><span class="cov8" title="1">{
+return nil, fmt.Errorf("failed to generate embedding for query: %w", err)
+}</span>
+
+<span class="cov8" title="1">results, err := m.collection.QueryEmbedding(ctx, embedding, limit, nil, nil)
+if err != nil </span><span class="cov8" title="1">{
+return nil, fmt.Errorf("failed to query collection: %w", err)
+}</span>
+
+<span class="cov8" title="1">return results, nil</span>
+}
+
+func (m *VectorMemory) Forget(ctx context.Context, id string) error <span class="cov8" title="1">{
+return m.collection.Delete(ctx, nil, nil, id)
+}</span>
+
+func (m *VectorMemory) Search(ctx context.Context, query string, limit int) ([]chromem.Result, error) <span class="cov8" title="1">{
+return m.Recall(ctx, query, limit)
+}</span>
+
+func (m *VectorMemory) List(ctx context.Context) ([]chromem.Document, error) <span class="cov8" title="1">{
+return nil, nil // Not implemented yet
+}</span>
+</pre>
+		
+		<pre class="file" id="file8" style="display: none">package orchestrator
+
+import (
+"context"
+"sync"
+)
+
+// Task represents a single tool call to be executed.
+type Task struct {
+ID       string
+ToolName string
+ToolArgs map[string]interface{}
+}
+
+// Result represents the outcome of a task execution.
+type Result struct {
+TaskID string
+Output string
+Error  error
+}
+
+// Orchestrator manages parallel task execution.
+type Orchestrator struct{}
+
+// NewOrchestrator creates a new Orchestrator.
+func NewOrchestrator() *Orchestrator <span class="cov8" title="1">{
+return &amp;Orchestrator{}
+}</span>
+
+// RunParallel executes multiple tasks concurrently.
+func (o *Orchestrator) RunParallel(ctx context.Context, tasks []Task, executeFunc func(context.Context, Task) (string, error)) []Result <span class="cov8" title="1">{
+var wg sync.WaitGroup
+results := make([]Result, len(tasks))
+
+for i, task := range tasks </span><span class="cov8" title="1">{
+wg.Add(1)
+go func(idx int, t Task) </span><span class="cov8" title="1">{
+defer wg.Done()
+output, err := executeFunc(ctx, t)
+results[idx] = Result{
+TaskID: t.ID,
+Output: output,
+Error:  err,
+}
+}</span>(i, task)
+}
+
+<span class="cov8" title="1">wg.Wait()
+return results</span>
+}
+</pre>
+		
+		<pre class="file" id="file9" style="display: none">package parser
+
+import (
+"encoding/json"
+"fmt"
+"regexp"
+"strings"
+
+"github.com/tidwall/gjson"
+)
+
+// Response represents the structured response from the LLM.
+type Response struct {
+Thoughts []string               `json:"thoughts"` 
+Headline string                 `json:"headline"` 
+ToolName string                 `json:"tool_name"` 
+ToolArgs map[string]interface{} `json:"tool_args"` 
+}
+
+// ParseLLMResponse extracts and parses JSON from the LLM's output.
+func ParseLLMResponse(input string) (*Response, error) <span class="cov8" title="1">{
+// Try to find JSON in markdown code blocks
+re := regexp.MustCompile("```(?:json)?\\s*([\\s\\S]*?)```")
+matches := re.FindStringSubmatch(input)
+
+jsonStr := input
+if len(matches) &gt; 1 </span><span class="cov8" title="1">{
+jsonStr = matches[1]
+}</span>
+
+<span class="cov8" title="1">jsonStr = strings.TrimSpace(jsonStr)
+
+// Use gjson to validate it's at least a JSON object
+if !gjson.Valid(jsonStr) </span><span class="cov8" title="1">{
+return nil, fmt.Errorf("invalid JSON: %s", jsonStr)
+}</span>
+
+<span class="cov8" title="1">var resp Response
+err := json.Unmarshal([]byte(jsonStr), &amp;resp)
+if err != nil </span><span class="cov8" title="1">{
+return nil, fmt.Errorf("failed to unmarshal JSON: %w", err)
+}</span>
+
+<span class="cov8" title="1">return &amp;resp, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file10" style="display: none">package token
+
+import (
+"fmt"
+"github.com/pkoukk/tiktoken-go"
+)
+
+// TokenManager handles token counting and pruning.
+type TokenManager struct {
+encoding *tiktoken.Tiktoken
+}
+
+// NewTokenManager creates a new TokenManager.
+func NewTokenManager(model string) (*TokenManager, error) <span class="cov8" title="1">{
+// Gemini models don't have a direct tiktoken encoding, but cl100k_base is a good approximation for many LLMs.
+// For more accuracy, one would use the Gemini API's countTokens method.
+enc, err := tiktoken.GetEncoding("cl100k_base")
+if err != nil </span><span class="cov0" title="0">{
+return nil, fmt.Errorf("failed to get encoding: %w", err)
+}</span>
+<span class="cov8" title="1">return &amp;TokenManager{encoding: enc}, nil</span>
+}
+
+// CountTokens returns the number of tokens in a string.
+func (tm *TokenManager) CountTokens(text string) int <span class="cov8" title="1">{
+tokens := tm.encoding.Encode(text, nil, nil)
+return len(tokens)
+}</span>
+
+// PruneHistory prunes the history messages to fit within the token limit.
+// This is a placeholder for more complex pruning logic.
+func (tm *TokenManager) PruneHistory(messages []string, maxTokens int) []string <span class="cov8" title="1">{
+totalTokens := 0
+var pruned []string
+for i := len(messages) - 1; i &gt;= 0; i-- </span><span class="cov8" title="1">{
+tokens := tm.CountTokens(messages[i])
+if totalTokens+tokens &gt; maxTokens </span><span class="cov8" title="1">{
+break</span>
+}
+<span class="cov8" title="1">totalTokens += tokens
+pruned = append([]string{messages[i]}, pruned...)</span>
+}
+<span class="cov8" title="1">return pruned</span>
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>

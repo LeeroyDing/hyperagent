@@ -5,8 +5,12 @@ import (
 "embed"
 "io/fs"
 "net/http"
+"os"
+"syscall"
+	"time"
 
 "github.com/LeeroyDing/hyperagent/internal/agent"
+"github.com/LeeroyDing/hyperagent/internal/daemon"
 "github.com/LeeroyDing/hyperagent/internal/history"
 "github.com/LeeroyDing/hyperagent/internal/memory"
 "github.com/gin-gonic/gin"
@@ -19,10 +23,12 @@ type Server struct {
 Agent   *agent.Agent
 History history.History
 Memory  memory.Memory
+Daemon  *daemon.Daemon
 router  *gin.Engine
+srv     *http.Server
 }
 
-func NewServer(a *agent.Agent, h history.History, m memory.Memory) *Server {
+func NewServer(a *agent.Agent, h history.History, m memory.Memory, d *daemon.Daemon) *Server {
 gin.SetMode(gin.ReleaseMode)
 r := gin.Default()
 
@@ -30,6 +36,7 @@ s := &Server{
 Agent:   a,
 History: h,
 Memory:  m,
+Daemon:  d,
 router:  r,
 }
 
@@ -40,6 +47,11 @@ return s
 func (s *Server) setupRoutes() {
 api := s.router.Group("/api")
 {
+// Daemon management
+api.GET("/daemon/status", s.getDaemonStatus)
+api.POST("/daemon/stop", s.stopDaemon)
+
+// Agent sessions
 api.GET("/sessions", s.getSessions)
 api.POST("/sessions", s.createSession)
 api.GET("/sessions/:id/messages", s.getMessages)
@@ -59,7 +71,35 @@ c.Redirect(http.StatusMovedPermanently, "/ui/")
 }
 
 func (s *Server) Run(addr string) error {
-return s.router.Run(addr)
+s.srv = &http.Server{
+Addr:    addr,
+Handler: s.router,
+}
+return s.srv.ListenAndServe()
+}
+
+func (s *Server) Shutdown(ctx context.Context) error {
+if s.srv == nil {
+return nil
+}
+return s.srv.Shutdown(ctx)
+}
+
+func (s *Server) getDaemonStatus(c *gin.Context) {
+pid := os.Getpid()
+c.JSON(http.StatusOK, gin.H{
+"status": "running",
+"pid":    pid,
+"uptime": "TODO",
+})
+}
+
+func (s *Server) stopDaemon(c *gin.Context) {
+c.JSON(http.StatusOK, gin.H{"message": "shutting down"})
+go func() {
+time.Sleep(1 * time.Second)
+syscall.Kill(os.Getpid(), syscall.SIGTERM)
+}()
 }
 
 func (s *Server) getSessions(c *gin.Context) {
